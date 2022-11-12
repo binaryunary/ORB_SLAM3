@@ -29,6 +29,7 @@
 #include<opencv2/imgproc/imgproc.hpp>
 
 #include"../../../include/System.h"
+#include "../../../include/Converter.h"
 
 #include"ViewerAR.h"
 
@@ -59,7 +60,7 @@ int main(int argc, char **argv)
 
     if(argc != 3)
     {
-        cerr << endl << "Usage: rosrun ORB_SLAM3 Mono path_to_vocabulary path_to_settings" << endl;        
+        cerr << endl << "Usage: rosrun ORB_SLAM3 Mono path_to_vocabulary path_to_settings" << endl;
         ros::shutdown();
         return 1;
     }
@@ -148,7 +149,7 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
     }
     cv::Mat im = cv_ptr->image.clone();
     cv::Mat imu;
-    cv::Mat Tcw = mpSLAM->TrackMonocular(cv_ptr->image,cv_ptr->header.stamp.toSec());
+    cv::Mat Tcw=ORB_SLAM3::Converter::toCvMat(mpSLAM->TrackMonocular(cv_ptr->image,cv_ptr->header.stamp.toSec()).matrix());
     int state = mpSLAM->GetTrackingState();
     vector<ORB_SLAM3::MapPoint*> vMPs = mpSLAM->GetTrackedMapPoints();
     vector<cv::KeyPoint> vKeys = mpSLAM->GetTrackedKeyPointsUn();
@@ -161,7 +162,7 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
     {
         cv::cvtColor(imu,imu,CV_RGB2BGR);
         viewerAR.SetImagePose(imu,Tcw,state,vKeys,vMPs);
-    }    
+    }
 }
 
 
