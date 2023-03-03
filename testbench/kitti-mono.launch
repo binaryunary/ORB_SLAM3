@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="https://gist.githubusercontent.com/nalt/dfa2abc9d2e3ae4feb82ca5608090387/raw/roslaunch.xsd">
+  <arg name="orbslam_root" value="/workspaces/ORB_SLAM3" />
+  <arg name="play_delay" default="7.0" />
+  <arg name="bag_path" default="beep_boop" />
+  <node name="orbslam" type="Mono" pkg="ORB_SLAM3" args="$(arg orbslam_root)/Vocabulary/ORBvoc.txt $(arg orbslam_root)/testbench/kitti-mono.yaml" output="screen" />
+  <!-- <node name="republish" type="republish" pkg="image_transport" output="screen" args="compressed in:=/interfacea/link3/image raw  out:=/camera/image_raw" /> -->
+  <node name="relay_camera" type="relay" pkg="topic_tools" args="/kitti/camera_color_left/image_raw /camera/image_raw" />
+  <node pkg="rosbag" type="play" name="player" required="true" args="$(arg bag_path)" launch-prefix="bash -c 'sleep $(arg play_delay); $0 $@' " />
+  <!-- <node pkg="rosbag" type="play" name="player" args="$(arg bag_path)" launch-prefix="bash -c 'sleep $(arg play_delay); $0 $@' " /> -->
+</launch>
