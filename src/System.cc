@@ -18,6 +18,7 @@
 
 
 
+#include "GPSPos.h"
 #include "System.h"
 #include "Converter.h"
 #include <thread>
@@ -398,6 +399,8 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
 
 Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
+    GPSPos pos;
+    pos.alt = 1.3;
 
     {
         unique_lock<mutex> lock(mMutexReset);
