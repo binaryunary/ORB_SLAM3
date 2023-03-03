@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /tmp/gps_umd/gps_common/install/setup.sh

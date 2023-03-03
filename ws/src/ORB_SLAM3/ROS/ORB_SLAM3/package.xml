@@ -1,0 +1,49 @@
+<package>
+  <name>orbslam3_ros</name>
+  <version>0.0.0</version>
+  <description>ORB_SLAM3</description>
+  <maintainer email="jane.doe@example.com">Jane Doe</maintainer>
+  <!-- <maintainer email="">Carlos Campos</maintainer>
+  <maintainer email="">Richard Elvira</maintainer>
+  <maintainer email="">Juan J. Gomez</maintainer>
+  <maintainer email="">Jose M.M. Montiel</maintainer>
+  <maintainer email="">Juan D. Tardos</maintainer> -->
+
+  <license>GPLv3</license>
+
+  <url type="website"></url>
+  <!-- <url type="bugtracker"></url> -->
+
+  <author>Carlos Campos</author>
+  <author>Richard Elvira</author>
+  <author>Juan J. Gomez</author>
+  <author>Jose M.M. Montiel</author>
+  <author>Juan D. Tardos</author>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed to compile this package. -->
+  <build_depend>roscpp</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>orbslam3</build_depend>
+
+  <!-- Dependencies needed after this package is compiled. -->
+  <run_depend>roscpp</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>orbslam3</run_depend>
+
+  <!-- Dependencies needed only for running tests. -->
+  <!-- <test_depend>roscpp</test_depend> -->
+  <!-- <test_depend>tf</test_depend> -->
+  <!-- <test_depend>sensor_msgs</test_depend> -->
+  <!-- <test_depend>image_transport</test_depend> -->
+  <!-- <test_depend>cv_bridge</test_depend> -->
+
+</package>

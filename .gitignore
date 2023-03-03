@@ -64,10 +64,13 @@ Thirdparty/DBoW2/lib/
 Thirdparty/g2o/build/
 Thirdparty/g2o/config.h
 Thirdparty/g2o/lib/
-Vocabulary/ORBvoc.txt
+ORBvoc.txt
 build/
-
+devel/
+install/
+logs/
 lib/
+.catkin_tools/
 
 cmake_modules/
 cmake-build-debug/
