@@ -171,9 +171,17 @@ target_link_libraries(mono_kitti
    ${catkin_LIBRARIES}
 )
 
-add_executable(orbslam3_ros_mono
+add_executable(mono
         ros/src/ros_mono.cc)
-target_link_libraries(orbslam3_ros_mono
+target_link_libraries(mono
+   ${PROJECT_NAME}
+   ${OpenCV_LIBRARIES}
+   ${catkin_LIBRARIES}
+)
+
+add_executable(mono_gps
+        ros/src/ros_mono_gps.cc)
+target_link_libraries(mono_gps
    ${PROJECT_NAME}
    ${OpenCV_LIBRARIES}
    ${catkin_LIBRARIES}
@@ -206,7 +214,13 @@ install(TARGETS mono_kitti
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(TARGETS orbslam3_ros_mono
+install(TARGETS mono
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS mono_gps
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -23,6 +23,10 @@
 #include<chrono>
 
 #include<ros/ros.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <sensor_msgs/Image.h>
+#include <gps_common/GPSFix.h>
 #include <cv_bridge/cv_bridge.h>
 
 #include<opencv2/core/core.hpp>
@@ -30,13 +34,16 @@
 #include "System.h"
 
 using namespace std;
+using namespace sensor_msgs;
+using namespace message_filters;
+using namespace gps_common;
 
 class ImageGrabber
 {
 public:
     ImageGrabber(ORB_SLAM3::System* pSLAM):mpSLAM(pSLAM){}
 
-    void GrabImage(const sensor_msgs::ImageConstPtr& msg);
+    void GrabImage(const ImageConstPtr& msg, const GPSFixConstPtr& gps);
 
     ORB_SLAM3::System* mpSLAM;
 };
@@ -59,7 +66,12 @@ int main(int argc, char **argv)
     ImageGrabber igb(&SLAM);
 
     ros::NodeHandle nodeHandler;
-    ros::Subscriber sub = nodeHandler.subscribe("/camera/image_raw", 1, &ImageGrabber::GrabImage,&igb);
+    // ros::Subscriber sub = nodeHandler.subscribe("/camera/image_raw", 1, &ImageGrabber::GrabImage,&igb);
+
+    message_filters::Subscriber<Image> image_sub(nodeHandler, "/camera/image_raw", 1);
+    message_filters::Subscriber<GPSFix> gps_sub(nodeHandler, "/gps/gps", 1);
+    TimeSynchronizer<Image, GPSFix> sync(image_sub, gps_sub, 10);
+    sync.registerCallback(&ImageGrabber::GrabImage, &igb);
 
     ros::spin();
 
@@ -74,13 +86,14 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
+void ImageGrabber::GrabImage(const ImageConstPtr& image, const GPSFixConstPtr& gps)
 {
+    cout << "image: " << image->header.stamp.toSec() << ", gps:" << gps->header.stamp.toSec() << endl;
     // Copy the ros image message to cv::Mat.
     cv_bridge::CvImageConstPtr cv_ptr;
     try
     {
-        cv_ptr = cv_bridge::toCvShare(msg);
+        cv_ptr = cv_bridge::toCvShare(image);
     }
     catch (cv_bridge::Exception& e)
     {

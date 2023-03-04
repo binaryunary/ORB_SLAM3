@@ -4,7 +4,7 @@
   <arg name="orbslam_root" value="/workspaces/ORB_SLAM3" />
   <arg name="play_delay" default="7.0" />
   <arg name="bag_path" default="beep_boop" />
-  <node name="orbslam" type="Mono" pkg="ORB_SLAM3" args="$(arg orbslam_root)/Vocabulary/ORBvoc.txt $(arg orbslam_root)/testbench/sekonix-mono.yaml" output="screen" />
+  <node name="orbslam" type="mono" pkg="orbslam3" args="$(arg orbslam_root)/Vocabulary/ORBvoc.txt $(arg orbslam_root)/testbench/sekonix-mono.yaml" output="screen" />
   <node name="republish" type="republish" pkg="image_transport" output="screen" args="compressed in:=/interfacea/link3/image raw  out:=/camera/image_raw" />
   <node pkg="rosbag" type="play" name="player" required="true" args="$(arg bag_path)" launch-prefix="bash -c 'sleep $(arg play_delay); $0 $@' " />
   <!-- <node pkg="rosbag" type="play" name="player" args="$(arg bag_path)" launch-prefix="bash -c 'sleep $(arg play_delay); $0 $@' " /> -->
