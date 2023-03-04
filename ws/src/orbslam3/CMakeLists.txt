@@ -173,16 +173,22 @@ target_link_libraries(mono_kitti
 # catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
 # TODO: fill in what other packages will need to use this package
 catkin_package(
-   #  DEPENDS # TODO add dependencies
+    DEPENDS Boost OpenCV
    #  CATKIN_DEPENDS # TODO
-   #  INCLUDE_DIRS # TODO include
-   #  LIBRARIES # TODO
+    INCLUDE_DIRS include
+    LIBRARIES orbslam3
 )
 
 install(TARGETS orbslam3
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# TODO: Follow ROS convention when organizing headers, http://docs.ros.org/en/indigo/api/catkin/html/howto/format2/building_libraries.html
+install(
+  DIRECTORY include
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
 install(TARGETS mono_kitti

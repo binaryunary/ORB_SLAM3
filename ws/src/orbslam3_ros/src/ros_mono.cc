@@ -27,8 +27,8 @@
 
 #include<opencv2/core/core.hpp>
 
-#include"../../../include/System.h"
-#include "../../../include/GPSPos.h"
+#include <orbslam3/include/System.h>
+#include "GPSPos.h"
 
 using namespace std;
 
