@@ -63,22 +63,26 @@ endif()
 
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
-find_package(orbslam3 REQUIRED)
+# find_package(DBoW2)
+# find_package(orbslam3 REQUIRED)
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
-${PROJECT_SOURCE_DIR}/../include/CameraModels
-${PROJECT_SOURCE_DIR}/../Thirdparty/Sophus
+# ${PROJECT_SOURCE_DIR}/../include/CameraModels
+# ${PROJECT_SOURCE_DIR}/../../orbslam3/Thirdparty/Sophus
+# ${PROJECT_SOURCE_DIR}/../../orbslam3/Thirdparty/DBoW2
 ${Pangolin_INCLUDE_DIRS}
 ${catkin_INCLUDE_DIRS}
+${DBoW2_INCLUDE_DIRS}
 )
 
 set(LIBS
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
-${PROJECT_SOURCE_DIR}/../orbslam3/Thirdparty/DBoW2/lib/libDBoW2.so
-${PROJECT_SOURCE_DIR}/../orbslam3/Thirdparty/g2o/lib/libg2o.so
+# ${DBoW2_LIBRARIES}
+# ${PROJECT_SOURCE_DIR}/../orbslam3/Thirdparty/DBoW2/lib/libDBoW2.so
+# ${PROJECT_SOURCE_DIR}/../orbslam3/Thirdparty/g2o/lib/libg2o.so
 # ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM3.so
 -lboost_system
 )

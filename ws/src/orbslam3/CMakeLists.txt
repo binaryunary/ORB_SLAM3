@@ -62,6 +62,7 @@ ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
 ${PROJECT_SOURCE_DIR}/include/CameraModels
 ${PROJECT_SOURCE_DIR}/Thirdparty/Sophus
+${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${gps_common_INCLUDE_DIRS}
@@ -160,11 +161,19 @@ endif()
 # Build examples
 
 #Monocular examples
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
 
 add_executable(mono_kitti
         Examples/Monocular/mono_kitti.cc)
 target_link_libraries(mono_kitti
+   ${PROJECT_NAME}
+   ${OpenCV_LIBRARIES}
+   ${catkin_LIBRARIES}
+)
+
+add_executable(orbslam3_ros_mono
+        ros/src/ros_mono.cc)
+target_link_libraries(orbslam3_ros_mono
    ${PROJECT_NAME}
    ${OpenCV_LIBRARIES}
    ${catkin_LIBRARIES}
@@ -192,6 +201,12 @@ install(
 )
 
 install(TARGETS mono_kitti
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS orbslam3_ros_mono
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
