@@ -25,6 +25,7 @@
 #include<ros/ros.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
 #include <sensor_msgs/Image.h>
 #include <gps_common/GPSFix.h>
 #include <cv_bridge/cv_bridge.h>
@@ -50,6 +51,8 @@ public:
 
 int main(int argc, char **argv)
 {
+    cout << "+++ GPS +++" << endl;
+
     ros::init(argc, argv, "Mono");
     ros::start();
 
@@ -70,7 +73,10 @@ int main(int argc, char **argv)
 
     message_filters::Subscriber<Image> image_sub(nodeHandler, "/camera/image_raw", 1);
     message_filters::Subscriber<GPSFix> gps_sub(nodeHandler, "/gps/gps", 1);
-    TimeSynchronizer<Image, GPSFix> sync(image_sub, gps_sub, 10);
+
+    typedef sync_policies::ApproximateTime<Image, GPSFix> SyncPolicy;
+    Synchronizer<SyncPolicy> sync(SyncPolicy(30), image_sub, gps_sub);
+
     sync.registerCallback(&ImageGrabber::GrabImage, &igb);
 
     ros::spin();
@@ -88,7 +94,7 @@ int main(int argc, char **argv)
 
 void ImageGrabber::GrabImage(const ImageConstPtr& image, const GPSFixConstPtr& gps)
 {
-    cout << "image: " << image->header.stamp.toSec() << ", gps:" << gps->header.stamp.toSec() << endl;
+    cout << "image: " << image->header.stamp << ", gps:" << gps->header.stamp << endl;
     // Copy the ros image message to cv::Mat.
     cv_bridge::CvImageConstPtr cv_ptr;
     try
