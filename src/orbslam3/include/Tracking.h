@@ -36,6 +36,7 @@
 #include "System.h"
 #include "ImuTypes.h"
 #include "Settings.h"
+#include "GPSPos.h"
 
 #include "GeometricCamera.h"
 
@@ -54,7 +55,7 @@ class System;
 class Settings;
 
 class Tracking
-{  
+{
 
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -72,6 +73,7 @@ public:
     Sophus::SE3f GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp, string filename);
     Sophus::SE3f GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp, string filename);
     Sophus::SE3f GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
+    Sophus::SE3f GrabImageMonocularGPS(const cv::Mat &im, const double &timestamp, const GPSPos &gps, string filename);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
 
@@ -273,10 +275,10 @@ protected:
     KeyFrame* mpReferenceKF;
     std::vector<KeyFrame*> mvpLocalKeyFrames;
     std::vector<MapPoint*> mvpLocalMapPoints;
-    
+
     // System
     System* mpSystem;
-    
+
     //Drawers
     Viewer* mpViewer;
     FrameDrawer* mpFrameDrawer;

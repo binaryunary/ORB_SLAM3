@@ -33,6 +33,7 @@
 #include<opencv2/core/core.hpp>
 
 #include "System.h"
+#include "GPSPos.h"
 
 using namespace std;
 using namespace sensor_msgs;
@@ -107,7 +108,9 @@ void ImageGrabber::GrabImage(const ImageConstPtr& image, const GPSFixConstPtr& g
         return;
     }
 
-    mpSLAM->TrackMonocular(cv_ptr->image,cv_ptr->header.stamp.toSec());
+    GPSPos gpsPos = {gps->latitude, gps->longitude, gps->altitude};
+
+    mpSLAM->TrackMonocularGPS(cv_ptr->image,cv_ptr->header.stamp.toSec(), gpsPos);
 }
 
 
