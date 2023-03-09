@@ -28,10 +28,10 @@
 
 #include "Converter.h"
 #include "Eigen/Core"
+#include "GPSPos.h"
 #include "ImuTypes.h"
 #include "ORBVocabulary.h"
 #include "Settings.h"
-#include "GPSPos.h"
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 #include "Thirdparty/Sophus/sophus/geometry.hpp"
