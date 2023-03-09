@@ -31,6 +31,7 @@
 #include "ImuTypes.h"
 #include "ORBVocabulary.h"
 #include "Settings.h"
+#include "GPSPos.h"
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 #include "Thirdparty/Sophus/sophus/geometry.hpp"
@@ -69,6 +70,10 @@ class Frame
 
     // Constructor for Monocular cameras.
     Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor *extractor, ORBVocabulary *voc,
+          GeometricCamera *pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,
+          Frame *pPrevF = static_cast<Frame *>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
+
+    Frame(const cv::Mat &imGray, const double &timeStamp, GPSPos gps, ORBextractor *extractor, ORBVocabulary *voc,
           GeometricCamera *pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,
           Frame *pPrevF = static_cast<Frame *>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
@@ -213,6 +218,9 @@ class Frame
 
     // Frame timestamp.
     double mTimeStamp;
+
+    // GPS position of frame
+    GPSPos mGPS;
 
     // Calibration matrix and OpenCV distortion parameters.
     cv::Mat mK;

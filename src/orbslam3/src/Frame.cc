@@ -408,6 +408,14 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor *extra
     mpMutexImu = new std::mutex();
 }
 
+Frame::Frame(const cv::Mat &imGray, const double &timeStamp, GPSPos gps, ORBextractor *extractor, ORBVocabulary *voc,
+             GeometricCamera *pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame *pPrevF,
+             const IMU::Calib &ImuCalib) : Frame(imGray, timeStamp, extractor, voc, pCamera, distCoef, bf, thDepth, pPrevF,
+                                                 ImuCalib)
+{
+    mGPS = gps;
+}
+
 void Frame::AssignFeaturesToGrid()
 {
     // Fill matrix with points
