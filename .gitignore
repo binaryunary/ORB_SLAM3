@@ -84,6 +84,7 @@ lib/
 !.catkin_tools/profiles/debug/config.yaml
 !.catkin_tools/profiles/release/config.yaml
 
+compile_commands.json
 
 cmake_modules/
 cmake-build-debug/

@@ -8,10 +8,7 @@
         "$catkin-gcc"
       ],
       "label": "catkin: build (Debug)",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      "group": "build"
     },
     {
       "type": "shell",
@@ -19,10 +16,19 @@
       "problemMatcher": [
         "$catkin-gcc"
       ],
-      "label": "catkin: build (Release)",
+      "label": "catkin_build_release",
+    },
+    {
+      "command": "${workspaceFolder}/merge_compile_commands.sh",
+      "type": "shell",
       "group": {
         "kind": "build",
-      }
+        "isDefault": true
+      },
+      "label": "catkin: build (Release)",
+      "dependsOn": [
+        "catkin_build_release"
+      ]
     },
     {
       "type": "shell",
@@ -35,7 +41,7 @@
     {
       "label": "source_env",
       "type": "shell",
-      "command": "source ${workspaceFolder}/devel_debug/setup.bash",
+      "command": "source ${workspaceFolder}/devel_debug/setup.bash"
     }
   ]
 }
