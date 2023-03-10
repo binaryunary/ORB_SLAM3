@@ -69,6 +69,10 @@ build/
 devel/
 install/
 logs/
+build_*/
+devel_*/
+install_*/
+logs_*/
 lib/
 .catkin_tools/
 
