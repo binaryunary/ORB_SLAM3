@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "command": "catkin build --profile debug",
+      "problemMatcher": [
+        "$catkin-gcc"
+      ],
+      "label": "catkin: build (Debug)",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "type": "shell",
+      "command": "catkin build --profile release",
+      "problemMatcher": [
+        "$catkin-gcc"
+      ],
+      "label": "catkin: build (Release)",
+      "group": {
+        "kind": "build",
+      }
+    },
+    {
+      "type": "shell",
+      "command": "catkin clean --yes",
+      "problemMatcher": [
+        "$catkin-gcc"
+      ],
+      "label": "catkin: clean"
+    },
+    {
+      "label": "source_env",
+      "type": "shell",
+      "command": "source ${workspaceFolder}/devel_debug/setup.bash",
+    }
+  ]
+}
