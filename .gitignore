@@ -74,7 +74,16 @@ devel_*/
 install_*/
 logs_*/
 lib/
-.catkin_tools/
+.catkin_tools/*
+!.catkin_tools/profiles
+.catkin_tools/profiles/*
+!.catkin_tools/profiles/debug/
+!.catkin_tools/profiles/release/
+.catkin_tools/profiles/debug/*
+.catkin_tools/profiles/release/*
+!.catkin_tools/profiles/debug/config.yaml
+!.catkin_tools/profiles/release/config.yaml
+
 
 cmake_modules/
 cmake-build-debug/
