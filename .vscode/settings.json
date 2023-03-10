@@ -63,4 +63,9 @@
     "/opt/ros/melodic/lib/python2.7/dist-packages"
   ],
   "C_Cpp.clang_format_style": "Microsoft",
+  "python.analysis.extraPaths": [
+    "/workspaces/ORB_SLAM3/devel/lib/python2.7/dist-packages",
+    "/opt/ros/melodic/lib/python2.7/dist-packages"
+  ],
+  "ros.distro": "melodic",
 }
