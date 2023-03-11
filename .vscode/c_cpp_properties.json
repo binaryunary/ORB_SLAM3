@@ -4,11 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/opt/ros/melodic/include/**",
-                "/usr/include/**",
-                "/usr/local/include/**"
+                "/opt/ros/melodic/include/**"
             ],
-            "compileCommands": "${workspaceFolder}/compile_commands.json",
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
