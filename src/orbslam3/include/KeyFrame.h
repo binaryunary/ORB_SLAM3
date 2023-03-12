@@ -21,6 +21,7 @@
 #define KEYFRAME_H
 
 #include "Frame.h"
+#include "GPSPos.h"
 #include "ImuTypes.h"
 #include "KeyFrameDatabase.h"
 #include "MapPoint.h"
@@ -313,6 +314,8 @@ class KeyFrame
     const long unsigned int mnFrameId;
 
     const double mTimeStamp;
+
+    const GPSPos mGPS;
 
     // Grid (to speed up feature matching)
     const int mnGridCols;

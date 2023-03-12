@@ -3,7 +3,7 @@
   "tasks": [
     {
       "type": "shell",
-      "command": "catkin build --profile debug",
+      "command": "catkin build --profile release",
       "problemMatcher": [
         "$catkin-gcc"
       ],

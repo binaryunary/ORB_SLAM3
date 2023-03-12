@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     SLAM.Shutdown();
 
     // Save camera trajectory
-    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
+    SLAM.SaveKeyFrameTrajectoryTUMGPS("KeyFrameTrajectory.txt", "GPSTrajectory.txt", "MapPoints.txt");
 
     ros::shutdown();
 
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 
 void ImageGrabber::GrabImage(const ImageConstPtr &image, const GPSFixConstPtr &gps)
 {
-    cout << "image: " << image->header.stamp << ", gps:" << gps->header.stamp << endl;
+    // cout << "image: " << image->header.stamp << ", gps:" << gps->header.stamp << endl;
     // Copy the ros image message to cv::Mat.
     cv_bridge::CvImageConstPtr cv_ptr;
     try

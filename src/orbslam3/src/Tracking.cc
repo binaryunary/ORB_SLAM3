@@ -1639,10 +1639,10 @@ Sophus::SE3f Tracking::GrabImageMonocularGPS(const cv::Mat &im, const double &ti
     {
         if (mState == NOT_INITIALIZED || mState == NO_IMAGES_YET || (lastID - initID) < mMaxFrames)
             mCurrentFrame =
-                Frame(mImGray, timestamp, mpIniORBextractor, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+                Frame(mImGray, timestamp, gps, mpIniORBextractor, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
         else
             mCurrentFrame =
-                Frame(mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+                Frame(mImGray, timestamp, gps, mpORBextractorLeft, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
     }
     else if (mSensor == System::IMU_MONOCULAR)
     {
@@ -2398,6 +2398,12 @@ void Tracking::Track()
         }
     }
 #endif
+
+    Eigen::Vector3f t(mCurrentFrame.GetCameraCenter());
+    std::stringstream ss;
+    ss << "Current Frame: " << t.x() << " " << t.y() << " " << t.z();
+
+    cout << ss.str() << endl;
 }
 
 void Tracking::StereoInitialization()
@@ -2521,7 +2527,6 @@ void Tracking::StereoInitialization()
 
 void Tracking::MonocularInitialization()
 {
-
     if (!mbReadyToInitializate)
     {
         // Set Reference Frame
@@ -2729,6 +2734,11 @@ void Tracking::CreateInitialMapMonocular()
     mState = OK;
 
     initID = pKFcur->mnId;
+
+    // Map *map = mpAtlas->GetCurrentMap();
+    // cout << "Map " << map->GetId() << " has " << map->KeyFramesInMap() << " keyframes and " << map->MapPointsInMap()
+    //      << " map points" << endl;
+    // cout << "Coords of initial KF: " << pKFini->GetPose().matrix() << endl;
 }
 
 void Tracking::CreateMapInAtlas()

@@ -247,7 +247,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     }
 
     // Fix verbosity
-    Verbose::SetTh(Verbose::VERBOSITY_QUIET);
+    Verbose::SetTh(Verbose::VERBOSITY_NORMAL);
 }
 
 Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp,
@@ -749,8 +749,66 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
         f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t(0) << " " << t(1) << " " << t(2) << " "
           << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
     }
+}
 
+void System::SaveKeyFrameTrajectoryTUMGPS(const string &filename, const string &gpsFile, const string &mapPointFile)
+{
+    cout << endl << "Saving keyframe trajectory to " << filename << " ..." << endl;
+    cout << endl << "Saving GPS data to " << gpsFile << " ..." << endl;
+
+    vector<KeyFrame *> vpKFs = mpAtlas->GetAllKeyFrames();
+    sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
+
+    // Transform all keyframes so that the first keyframe is at the origin.
+    // After a loop closure the first keyframe might not be at the origin.
+    ofstream f;
+    f.open(filename.c_str());
+    f << fixed;
+
+    ofstream fGPS;
+    fGPS.open(gpsFile.c_str());
+    fGPS << fixed;
+    // fGPS << setprecision(14);
+
+    ofstream fMP;
+    fMP.open(mapPointFile.c_str());
+    fMP << fixed;
+    // fMP << setprecision(9);
+
+    for (size_t i = 0; i < vpKFs.size(); i++)
+    {
+        KeyFrame *pKF = vpKFs[i];
+
+        // pKF->SetPose(pKF->GetPose()*Two);
+
+        if (pKF->isBad())
+            continue;
+
+        Sophus::SE3f Twc = pKF->GetPoseInverse();
+        Eigen::Quaternionf q = Twc.unit_quaternion();
+        Eigen::Vector3f t = Twc.translation();
+        f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t(0) << " " << t(1) << " " << t(2) << " "
+          << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+
+        fGPS << setprecision(6) << pKF->mTimeStamp << setprecision(14) << " " << pKF->mGPS.lat << " " << pKF->mGPS.lon
+             << " " << pKF->mGPS.alt << endl;
+    }
     f.close();
+    fGPS.close();
+
+    cout << endl << "Saving MapPoints to " << mapPointFile << " ..." << endl;
+    vector<MapPoint *> vpMPs = mpAtlas->GetAllMapPoints();
+    for (size_t i = 0; i < vpMPs.size(); i++)
+    {
+        MapPoint *pMP = vpMPs[i];
+
+        if (pMP->isBad())
+            continue;
+
+        Eigen::Vector3f pos = pMP->GetWorldPos();
+        fMP << setprecision(9) << pos(0) << " " << pos(1) << " " << pos(2) << endl;
+    }
+    fMP.close();
 }
 
 void System::SaveTrajectoryEuRoC(const string &filename)
@@ -1077,8 +1135,8 @@ void System::SaveTrajectoryEuRoC(const string &filename, Map *pMap)
 
             Eigen::Vector3f twb = Twb.translation();
             Eigen::Quaternionf q = Twb.unit_quaternion();
-            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twb(0) << " " << twb(1) << " " << twb(2) <<
-" " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twb(0) << " " << twb(1) << " " << twb(2)
+<< " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
         }
         else
         {
@@ -1087,8 +1145,8 @@ void System::SaveTrajectoryEuRoC(const string &filename, Map *pMap)
 
             Eigen::Vector3f twc = Twc.translation();
             Eigen::Quaternionf q = Twc.unit_quaternion();
-            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twc(0) << " " << twc(1) << " " << twc(2) <<
-" " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twc(0) << " " << twc(1) << " " << twc(2)
+<< " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
         }
 
         // cout << "5" << endl;
@@ -1297,10 +1355,10 @@ lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++)
         cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
         cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
 
-        f << setprecision(9) << Rwc.at<float>(0,0) << " " << Rwc.at<float>(0,1)  << " " << Rwc.at<float>(0,2) << " "  <<
-twc.at<float>(0) << " " << Rwc.at<float>(1,0) << " " << Rwc.at<float>(1,1)  << " " << Rwc.at<float>(1,2) << " "  <<
-twc.at<float>(1) << " " << Rwc.at<float>(2,0) << " " << Rwc.at<float>(2,1)  << " " << Rwc.at<float>(2,2) << " "  <<
-twc.at<float>(2) << endl;
+        f << setprecision(9) << Rwc.at<float>(0,0) << " " << Rwc.at<float>(0,1)  << " " << Rwc.at<float>(0,2) << " "
+<< twc.at<float>(0) << " " << Rwc.at<float>(1,0) << " " << Rwc.at<float>(1,1)  << " " << Rwc.at<float>(1,2) << " "
+<< twc.at<float>(1) << " " << Rwc.at<float>(2,0) << " " << Rwc.at<float>(2,1)  << " " << Rwc.at<float>(2,2) << " "
+<< twc.at<float>(2) << endl;
     }
     f.close();
 }*/
