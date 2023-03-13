@@ -3,7 +3,7 @@
   "tasks": [
     {
       "type": "shell",
-      "command": "source /opt/ros/melodic/setup.bash && catkin build -j5 --profile release",
+      "command": "source /opt/ros/melodic/setup.bash && catkin clean --profile release --yes && catkin build -j5 --profile release",
       "problemMatcher": [
         "$catkin-gcc"
       ],
