@@ -98,6 +98,7 @@ class System
     {
         TEXT_FILE = 0,
         BINARY_FILE = 1,
+        XML_FILE = 2,
     };
 
   public:

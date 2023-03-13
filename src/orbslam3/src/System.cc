@@ -1599,6 +1599,17 @@ void System::SaveAtlas(int type)
             oa << mpAtlas;
             cout << "End to write save binary file" << endl;
         }
+        // else if (type == XML_FILE) // XML file
+        // {
+        //     cout << "Starting to write the save xml file" << endl;
+        //     std::remove(pathSaveFileName.c_str());
+        //     std::ofstream ofs(pathSaveFileName, std::ios::binary);
+        //     boost::archive::xml_oarchive oa(ofs);
+        //     oa << strVocabularyName;
+        //     oa << strVocabularyChecksum;
+        //     oa << mpAtlas;
+        //     cout << "End to write save xml file" << endl;
+        // }
     }
 }
 

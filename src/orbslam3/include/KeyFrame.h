@@ -58,6 +58,8 @@ class KeyFrame
         ar &mnId;
         ar &const_cast<long unsigned int &>(mnFrameId);
         ar &const_cast<double &>(mTimeStamp);
+        ar &mGPS;
+
         // Grid
         ar &const_cast<int &>(mnGridCols);
         ar &const_cast<int &>(mnGridRows);
@@ -315,7 +317,7 @@ class KeyFrame
 
     const double mTimeStamp;
 
-    const GPSPos mGPS;
+    GPSPos mGPS;
 
     // Grid (to speed up feature matching)
     const int mnGridCols;

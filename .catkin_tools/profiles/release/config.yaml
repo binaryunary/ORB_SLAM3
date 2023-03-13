@@ -2,9 +2,9 @@ blacklist: []
 build_space: build_release
 catkin_make_args: []
 cmake_args:
-- -DCMAKE_BUILD_TYPE=Release
-- -DCMAKE_EXPORT_COMPILE_COMMANDS=1
-- -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+  - -DCMAKE_BUILD_TYPE=Release
+  - -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+# - -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 devel_layout: linked
 devel_space: devel_release
 extend_path: null
