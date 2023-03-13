@@ -29,6 +29,8 @@
 #include "Optimizer.h"
 #include "Pinhole.h"
 
+#include <Eigen/Dense>
+
 #include <iostream>
 
 #include <chrono>
@@ -2399,9 +2401,28 @@ void Tracking::Track()
     }
 #endif
 
-    Eigen::Vector3f t(mCurrentFrame.GetCameraCenter());
+    Eigen::Vector3f cameraCenter(mCurrentFrame.GetCameraCenter());
     std::stringstream ss;
-    ss << "Current Frame: " << t.x() << " " << t.y() << " " << t.z();
+    if (!mbOnlyTracking)
+    {
+        ss << "Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
+    }
+    else
+    {
+        Eigen::Matrix3f R;
+        R << -0.9808932218, -0.1945454344, -0.0007492427,
+              0.1944659814, -0.9803670292, -0.0326108912,
+              0.0056097671, -0.0321335044, 0.9994678426;
+
+        Eigen::Vector3f t(2974802.196429322, 8048609.731798767, 38.2930014618);
+        float c = 38.2930014618;
+
+        Eigen::Vector3f tmp(cameraCenter.x(), cameraCenter.z(), cameraCenter.y() * -1);
+        Eigen::Vector3f trCameraCenter = t + c * R * tmp;
+
+        cout << "Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
+        cout << " [X] : " << trCameraCenter.x() << " " << trCameraCenter.y() << " " << trCameraCenter.z() << endl;
+    }
 
     cout << ss.str() << endl;
 }
