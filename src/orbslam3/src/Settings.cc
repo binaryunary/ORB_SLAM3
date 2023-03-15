@@ -27,9 +27,11 @@
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/core/persistence.hpp>
 
+#include <boost/filesystem.hpp>
 #include <iostream>
 
 using namespace std;
+namespace fs = boost::filesystem;
 
 namespace ORB_SLAM3
 {
@@ -197,7 +199,8 @@ Settings::Settings(const std::string &configFile, const int &sensor)
         readRGBD(fSettings);
         cout << "\t-Loaded RGB-D calibration" << endl;
     }
-
+    readSaveRoot(fSettings);
+    cout << "\t-Loaded save root" << endl;
     readORB(fSettings);
     cout << "\t-Loaded ORB settings" << endl;
     readViewer(fSettings);
@@ -205,6 +208,8 @@ Settings::Settings(const std::string &configFile, const int &sensor)
     readLoadAndSave(fSettings);
     cout << "\t-Loaded Atlas settings" << endl;
     readOtherParameters(fSettings);
+    cout << "\t-Loaded GPS transformation parameters" << endl;
+    readGPSTransform(fSettings);
     cout << "\t-Loaded misc parameters" << endl;
 
     if (bNeedToRectify_)
@@ -535,8 +540,36 @@ void Settings::readLoadAndSave(cv::FileStorage &fSettings)
 {
     bool found;
 
-    sLoadFrom_ = readParameter<string>(fSettings, "System.LoadAtlasFromFile", found, false);
-    sSaveto_ = readParameter<string>(fSettings, "System.SaveAtlasToFile", found, false);
+    std::string loadFile = readParameter<string>(fSettings, "System.LoadAtlasFromFile", found, false);
+    if (found){
+        sLoadFrom_ = (fs::path(sSaveRoot_) / fs::path(loadFile)).string();
+    }
+
+    std::string saveFile = readParameter<string>(fSettings, "System.SaveAtlasToFile", found, false);
+    if (found)
+    {
+        sSaveto_ = (fs::path(sSaveRoot_) / fs::path(saveFile)).string();
+    }
+}
+
+void Settings::readSaveRoot(cv::FileStorage &fSettings)
+{
+    bool found;
+
+    sSaveRoot_ = readParameter<string>(fSettings, "System.SaveRoot", found, true);
+}
+
+void Settings::readGPSTransform(cv::FileStorage &fSettings)
+{
+    bool found;
+
+    cv::Mat matRot = readParameter<cv::Mat>(fSettings, "GPS.TransformRotation", found, false);
+    cv::cv2eigen(matRot, gpsTransformRotation_);
+
+    cv::Mat matTrans = readParameter<cv::Mat>(fSettings, "GPS.TransformTranslation", found, false);
+    cv::cv2eigen(matTrans, gpsTransformTranslation_);
+
+    gpsTransformScale_ = readParameter<double>(fSettings, "GPS.TransformScale", found, false);
 }
 
 void Settings::readOtherParameters(cv::FileStorage &fSettings)
@@ -592,6 +625,16 @@ void Settings::precomputeRectificationMaps()
 
 ostream &operator<<(std::ostream &output, const Settings &settings)
 {
+    output << "System settings: " << endl;
+    output << "\t-SaveRoot: " << settings.sSaveRoot_ << endl;
+    output << "\t-AtlasLoadFile: " << settings.sLoadFrom_ << endl;
+    output << "\t-AtlasSaveFile: " << settings.sSaveto_ << endl;
+
+    output << "GPS transformation: " << endl;
+    output << "\t-Rotation: " << settings.gpsTransformRotation_ << endl;
+    output << "\t-Translation: " << settings.gpsTransformTranslation_ << endl;
+    output << "\t-Scale: " << settings.gpsTransformScale_ << endl;
+
     output << "SLAM settings: " << endl;
 
     output << "\t-Camera 1 parameters (";

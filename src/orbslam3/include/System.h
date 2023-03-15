@@ -160,7 +160,11 @@ class System
     // See format details at: http://vision.in.tum.de/data/datasets/rgbd-dataset
     void SaveKeyFrameTrajectoryTUM(const string &filename);
 
-    void SaveKeyFrameTrajectoryTUMGPS(const string &filename, const string &gpsFile, const string &mapPointFile);
+    void SaveData();
+    void SaveKeyFrameTrajectoryTUMGPS();
+    void SaveMapPoints();
+    void SaveSLAMEstimate();
+    void SaveGPSEstimate();
 
     void SaveTrajectoryEuRoC(const string &filename);
     void SaveKeyFrameTrajectoryEuRoC(const string &filename);

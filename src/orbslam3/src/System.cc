@@ -28,12 +28,14 @@
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/string.hpp>
+#include <boost/filesystem.hpp>
 #include <iomanip>
 #include <openssl/md5.h>
 #include <pangolin/pangolin.h>
 #include <thread>
 
 using namespace std;
+namespace fs = boost::filesystem;
 
 namespace ORB_SLAM3
 {
@@ -756,33 +758,34 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
     }
 }
 
-void System::SaveKeyFrameTrajectoryTUMGPS(const string &filename, const string &gpsFile, const string &mapPointFile)
+void System::SaveData()
 {
-    cout << endl << "Saving keyframe trajectory to " << filename << " ..." << endl;
-    cout << endl << "Saving GPS data to " << gpsFile << " ..." << endl;
+    SaveKeyFrameTrajectoryTUMGPS();
+    SaveMapPoints();
+    SaveSLAMEstimate();
+    SaveGPSEstimate();
+}
 
+void System::SaveKeyFrameTrajectoryTUMGPS()
+{
     vector<KeyFrame *> vpKFs = mpAtlas->GetAllKeyFrames();
     sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
-    ofstream f;
-    f.open(filename.c_str());
-    f << fixed;
+    fs::path kfTrajectoryFile = fs::path(settings_->saveRoot()) / fs::path("KeyFrameTrajectory.txt");
+    ofstream fKFTrajectory;
+    fKFTrajectory.open(kfTrajectoryFile.string().c_str());
+    fKFTrajectory << fixed;
 
+    cout << endl << "Saving KeyFrame trajectory to " << kfTrajectoryFile << " ..." << endl;
+
+    fs::path gpsFile = fs::path(settings_->saveRoot()) / fs::path("GPSTrajectory.txt");
     ofstream fGPS;
-    fGPS.open(gpsFile.c_str());
+    fGPS.open(gpsFile.string().c_str());
     fGPS << fixed;
-    // fGPS << setprecision(14);
 
-    ofstream fMP;
-    fMP.open(mapPointFile.c_str());
-    fMP << fixed;
-
-    ofstream fGPSe;
-    fGPSe.open("GPS_estimates.txt");
-    fGPSe << fixed;
-    // fMP << setprecision(9);
+    cout << endl << "Saving GPS data to " << gpsFile << " ..." << endl;
 
     for (size_t i = 0; i < vpKFs.size(); i++)
     {
@@ -796,16 +799,24 @@ void System::SaveKeyFrameTrajectoryTUMGPS(const string &filename, const string &
         Sophus::SE3f Twc = pKF->GetPoseInverse();
         Eigen::Quaternionf q = Twc.unit_quaternion();
         Eigen::Vector3f t = Twc.translation();
-        f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t(0) << " " << t(1) << " " << t(2) << " "
-          << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+        fKFTrajectory << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t(0) << " " << t(1) << " "
+                      << t(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
 
         fGPS << setprecision(6) << pKF->mTimeStamp << setprecision(14) << " " << pKF->mGPS.lat << " " << pKF->mGPS.lon
              << " " << pKF->mGPS.alt << endl;
     }
-    f.close();
+    fKFTrajectory.close();
     fGPS.close();
+}
 
-    cout << endl << "Saving MapPoints to " << mapPointFile << " ..." << endl;
+void System::SaveMapPoints()
+{
+    fs::path mapPointsFile = fs::path(settings_->saveRoot()) / fs::path("MapPoints.txt");
+    ofstream fMP;
+    fMP.open(mapPointsFile.string().c_str());
+    fMP << fixed;
+
+    cout << endl << "Saving MapPoints to " << mapPointsFile << " ..." << endl;
     vector<MapPoint *> vpMPs = mpAtlas->GetAllMapPoints();
     for (size_t i = 0; i < vpMPs.size(); i++)
     {
@@ -818,8 +829,21 @@ void System::SaveKeyFrameTrajectoryTUMGPS(const string &filename, const string &
         fMP << setprecision(9) << pos(0) << " " << pos(1) << " " << pos(2) << endl;
     }
     fMP.close();
+}
 
-    cout << endl << "Saving GPS estimates to GPS_estimates.txt ..." << endl;
+void System::SaveSLAMEstimate()
+{
+    // TODO: Save the SLAM estimate to a file
+}
+
+void System::SaveGPSEstimate()
+{
+    fs::path gpsEstimatesFile = fs::path(settings_->saveRoot()) / fs::path("GPSEstimates.txt");
+    ofstream fGPSe;
+    fGPSe.open(gpsEstimatesFile.string().c_str());
+    fGPSe << fixed;
+
+    cout << endl << "Saving GPS estimates to " << gpsEstimatesFile << endl;
     for (size_t i = 0; i < mpTracker->mGPSEstimate.size(); i++)
     {
         GPSPos pos = mpTracker->mGPSEstimate[i];
@@ -1585,10 +1609,6 @@ void System::SaveAtlas(int type)
         // Save the current session
         mpAtlas->PreSave();
 
-        string pathSaveFileName = "./";
-        pathSaveFileName = pathSaveFileName.append(mStrSaveAtlasToFile);
-        pathSaveFileName = pathSaveFileName.append(".osa");
-
         string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
         std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
         string strVocabularyName = mStrVocabularyFilePath.substr(found + 1);
@@ -1596,8 +1616,8 @@ void System::SaveAtlas(int type)
         if (type == TEXT_FILE) // File text
         {
             cout << "Starting to write the save text file " << endl;
-            std::remove(pathSaveFileName.c_str());
-            std::ofstream ofs(pathSaveFileName, std::ios::binary);
+            std::remove(mStrSaveAtlasToFile.c_str());
+            std::ofstream ofs(mStrSaveAtlasToFile, std::ios::binary);
             boost::archive::text_oarchive oa(ofs);
 
             oa << strVocabularyName;
@@ -1608,8 +1628,8 @@ void System::SaveAtlas(int type)
         else if (type == BINARY_FILE) // File binary
         {
             cout << "Starting to write the save binary file" << endl;
-            std::remove(pathSaveFileName.c_str());
-            std::ofstream ofs(pathSaveFileName, std::ios::binary);
+            std::remove(mStrSaveAtlasToFile.c_str());
+            std::ofstream ofs(mStrSaveAtlasToFile, std::ios::binary);
             boost::archive::binary_oarchive oa(ofs);
             oa << strVocabularyName;
             oa << strVocabularyChecksum;
@@ -1635,14 +1655,10 @@ bool System::LoadAtlas(int type)
     string strFileVoc, strVocChecksum;
     bool isRead = false;
 
-    string pathLoadFileName = "./";
-    pathLoadFileName = pathLoadFileName.append(mStrLoadAtlasFromFile);
-    pathLoadFileName = pathLoadFileName.append(".osa");
-
     if (type == TEXT_FILE) // File text
     {
         cout << "Starting to read the save text file " << endl;
-        std::ifstream ifs(pathLoadFileName, std::ios::binary);
+        std::ifstream ifs(mStrLoadAtlasFromFile, std::ios::binary);
         if (!ifs.good())
         {
             cout << "Load file not found" << endl;
@@ -1658,7 +1674,7 @@ bool System::LoadAtlas(int type)
     else if (type == BINARY_FILE) // File binary
     {
         cout << "Starting to read the save binary file" << endl;
-        std::ifstream ifs(pathLoadFileName, std::ios::binary);
+        std::ifstream ifs(mStrLoadAtlasFromFile, std::ios::binary);
         if (!ifs.good())
         {
             cout << "Load file not found" << endl;
