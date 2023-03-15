@@ -58,6 +58,7 @@ find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(gps_common REQUIRED)
 find_package(realsense2)
+# find_package(PROJ4 REQUIRED)
 
 include_directories(
    ${PROJECT_SOURCE_DIR}
@@ -67,6 +68,7 @@ include_directories(
    ${EIGEN3_INCLUDE_DIR}
    ${Pangolin_INCLUDE_DIRS}
    ${gps_common_INCLUDE_DIRS}
+   /usr/include
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -145,6 +147,7 @@ target_link_libraries(${PROJECT_NAME}
    ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
    -lboost_serialization
    -lcrypto
+   -lproj
 )
 
 # If RealSense SDK is found the library is added and its examples compiled

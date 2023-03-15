@@ -179,6 +179,8 @@ class Tracking
 
     bool mbWriteStats;
 
+    vector<GPSPos> mGPSEstimate;
+
 #ifdef REGISTER_TIMES
     void LocalMapStats2File();
     void TrackStats2File();

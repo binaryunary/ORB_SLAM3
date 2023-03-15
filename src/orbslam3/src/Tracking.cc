@@ -35,6 +35,7 @@
 
 #include <chrono>
 #include <mutex>
+#include <proj_api.h>
 
 using namespace std;
 
@@ -2420,8 +2421,24 @@ void Tracking::Track()
         Eigen::Vector3f tmp(cameraCenter.x(), cameraCenter.z(), cameraCenter.y() * -1);
         Eigen::Vector3f trCameraCenter = t + c * R * tmp;
 
+        double x = trCameraCenter.x();
+        double y = trCameraCenter.y();
+
+        // Define the Mercator and WGS84 projections
+        projPJ pj_merc = pj_init_plus("+proj=merc +ellps=WGS84 +datum=WGS84 +units=m");
+        projPJ pj_wgs84 = pj_init_plus("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
+
+        // Convert your Mercator coordinates to WGS84 lat/lon
+        pj_transform(pj_merc, pj_wgs84, 1, 1, &x, &y, nullptr);
+
+        pj_free(pj_merc);
+        pj_free(pj_wgs84);
+
         cout << "Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
-        cout << " [X] : " << trCameraCenter.x() << " " << trCameraCenter.y() << " " << trCameraCenter.z() << endl;
+        cout << " [MERC] : " << trCameraCenter.x() << " " << trCameraCenter.y() << " " << trCameraCenter.z() << endl;
+        cout << setprecision (15) << " [WGS] : " << x * RAD_TO_DEG << " " << y * RAD_TO_DEG << " " << trCameraCenter.z() << endl;
+
+        mGPSEstimate.push_back({x * RAD_TO_DEG, y * RAD_TO_DEG, trCameraCenter.z()});
     }
 
     cout << ss.str() << endl;

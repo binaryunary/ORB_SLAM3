@@ -142,6 +142,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     }
     else
     {
+        // If the Atlas is loaded from file, go into localization mode
+        mbActivateLocalizationMode = true;
 
         // Load ORB Vocabulary
         cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
@@ -776,6 +778,10 @@ void System::SaveKeyFrameTrajectoryTUMGPS(const string &filename, const string &
     ofstream fMP;
     fMP.open(mapPointFile.c_str());
     fMP << fixed;
+
+    ofstream fGPSe;
+    fGPSe.open("GPS_estimates.txt");
+    fGPSe << fixed;
     // fMP << setprecision(9);
 
     for (size_t i = 0; i < vpKFs.size(); i++)
@@ -812,6 +818,14 @@ void System::SaveKeyFrameTrajectoryTUMGPS(const string &filename, const string &
         fMP << setprecision(9) << pos(0) << " " << pos(1) << " " << pos(2) << endl;
     }
     fMP.close();
+
+    cout << endl << "Saving GPS estimates to GPS_estimates.txt ..." << endl;
+    for (size_t i = 0; i < mpTracker->mGPSEstimate.size(); i++)
+    {
+        GPSPos pos = mpTracker->mGPSEstimate[i];
+        fGPSe << setprecision(14) << pos.lat << " " << pos.lon << " " << pos.alt << endl;
+    }
+    fGPSe.close();
 }
 
 void System::SaveTrajectoryEuRoC(const string &filename)
