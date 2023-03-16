@@ -28,6 +28,7 @@
 #include "ORBmatcher.h"
 #include "Optimizer.h"
 #include "Pinhole.h"
+#include "GPSTransformer.h"
 
 #include <Eigen/Dense>
 
@@ -49,7 +50,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer,
       mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB), mbReadyToInitializate(false), mpSystem(pSys),
       mpViewer(NULL), bStepByStep(false), mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas),
       mnLastRelocFrameId(0), time_recently_lost(5.0), mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0),
-      mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame *>(NULL)), mSettings(settings)
+      mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame *>(NULL)), mGPSTransformer(GPSTransformer(settings))
 {
     // Load camera parameters from settings file
     if (settings)
@@ -2411,33 +2412,34 @@ void Tracking::Track()
     }
     else
     {
-        Eigen::Matrix3f R;
-        R << -0.9808932218, -0.1945454344, -0.0007492427,
-              0.1944659814, -0.9803670292, -0.0326108912,
-              0.0056097671, -0.0321335044, 0.9994678426;
+        // Eigen::Matrix3f R;
+        // R << -0.9808932218, -0.1945454344, -0.0007492427,
+        //       0.1944659814, -0.9803670292, -0.0326108912,
+        //       0.0056097671, -0.0321335044, 0.9994678426;
 
-        Eigen::Vector3f t(2974802.196429322, 8048609.731798767, 38.2930014618);
-        float c = 38.2930014618;
+        // Eigen::Vector3f t(2974802.196429322, 8048609.731798767, 38.2930014618);
+        // float c = 38.2930014618;
 
-        Eigen::Vector3f tmp(cameraCenter.x(), cameraCenter.z(), cameraCenter.y() * -1);
-        Eigen::Vector3f trCameraCenter = t + c * R * tmp;
+        Eigen::Vector3f trCameraCenter = mGPSTransformer.slamToMercator(cameraCenter);
 
         double x = trCameraCenter.x();
         double y = trCameraCenter.y();
 
+        mGPSTransformer.mercatorToWGS84(x, y);
+
         // Define the Mercator and WGS84 projections
-        projPJ pj_merc = pj_init_plus("+proj=merc +ellps=WGS84 +datum=WGS84 +units=m");
-        projPJ pj_wgs84 = pj_init_plus("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
+        // projPJ pj_merc = pj_init_plus("+proj=merc +ellps=WGS84 +datum=WGS84 +units=m");
+        // projPJ pj_wgs84 = pj_init_plus("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
 
         // Convert your Mercator coordinates to WGS84 lat/lon
-        pj_transform(pj_merc, pj_wgs84, 1, 1, &x, &y, nullptr);
+        // pj_transform(pj_merc, pj_wgs84, 1, 1, &x, &y, nullptr);
 
-        pj_free(pj_merc);
-        pj_free(pj_wgs84);
+        // pj_free(pj_merc);
+        // pj_free(pj_wgs84);
 
         cout << "Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
         cout << " [MERC] : " << trCameraCenter.x() << " " << trCameraCenter.y() << " " << trCameraCenter.z() << endl;
-        cout << setprecision (15) << " [WGS] : " << x * RAD_TO_DEG << " " << y * RAD_TO_DEG << " " << trCameraCenter.z() << endl;
+        cout << setprecision (15) << " [WGS] : " << x << " " << y << " " << trCameraCenter.z() << endl;
 
         mGPSEstimate.push_back({x * RAD_TO_DEG, y * RAD_TO_DEG, trCameraCenter.z()});
     }

@@ -103,6 +103,7 @@ add_library(${PROJECT_NAME} SHARED
    src/TwoViewReconstruction.cc
    src/Config.cc
    src/Settings.cc
+   src/GPSTransformer.cpp
    include/System.h
    include/Tracking.h
    include/LocalMapping.h
@@ -134,6 +135,7 @@ add_library(${PROJECT_NAME} SHARED
    include/Config.h
    include/GPSPos.h
    include/Settings.h
+   include/GPSTransformer.h
 )
 
 # add_subdirectory(Thirdparty/g2o)

@@ -39,6 +39,7 @@
 #include "Viewer.h"
 
 #include "GeometricCamera.h"
+#include "GPSTransformer.h"
 
 #include <mutex>
 #include <unordered_set>
@@ -358,7 +359,7 @@ class Tracking
 
     Sophus::SE3f mTlr;
 
-    Settings *mSettings;
+    GPSTransformer mGPSTransformer;
 
     void newParameterLoader(Settings *settings);
 

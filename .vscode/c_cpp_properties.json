@@ -3,7 +3,10 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
+                "${workspaceFolder}/src/orbslam3/include/**",
+                "${workspaceFolder}/devel_release/include",
+                "${workspaceFolder}/src/orbslam3/Thirdparty/DBoW2/DBoW2",
+                "${workspaceFolder}/src/orbslam3/Thirdparty/DBoW2/DUtils",
                 "/opt/ros/melodic/include/**"
             ],
             "defines": [],

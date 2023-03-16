@@ -29,6 +29,7 @@
 
 #include <boost/filesystem.hpp>
 #include <iostream>
+#include <Eigen/Dense>
 
 using namespace std;
 namespace fs = boost::filesystem;
@@ -567,7 +568,9 @@ void Settings::readGPSTransform(cv::FileStorage &fSettings)
     cv::cv2eigen(matRot, gpsTransformRotation_);
 
     cv::Mat matTrans = readParameter<cv::Mat>(fSettings, "GPS.TransformTranslation", found, false);
-    cv::cv2eigen(matTrans, gpsTransformTranslation_);
+    Eigen::Matrix3f matTransEigen;
+    cv::cv2eigen(matTrans, matTransEigen);
+    gpsTransformTranslation_ = Eigen::Vector3f(matTransEigen(0, 0), matTransEigen(1, 0), matTransEigen(2, 0));
 
     gpsTransformScale_ = readParameter<double>(fSettings, "GPS.TransformScale", found, false);
 }

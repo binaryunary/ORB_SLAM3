@@ -146,6 +146,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     {
         // If the Atlas is loaded from file, go into localization mode
         mbActivateLocalizationMode = true;
+        cout << "Alas loaded from, localization mode activated." << endl;
 
         // Load ORB Vocabulary
         cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
@@ -179,6 +180,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
         // cout << "KF in DB: " << mpKeyFrameDatabase->mnNumKFs << "; words: " << mpKeyFrameDatabase->mnNumWords <<
         // endl;
+
+        cout << "Total maps in Atlas: " << mpAtlas->GetAllMaps().size() << endl;
 
         loadedAtlas = true;
 
