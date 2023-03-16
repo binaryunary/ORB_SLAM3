@@ -257,245 +257,245 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     Verbose::SetTh(Verbose::VERBOSITY_NORMAL);
 }
 
-Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp,
-                                 const vector<IMU::Point> &vImuMeas, string filename)
-{
-    if (mSensor != STEREO && mSensor != IMU_STEREO)
-    {
-        cerr << "ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial." << endl;
-        exit(-1);
-    }
+// Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp,
+//                                  const vector<IMU::Point> &vImuMeas, string filename)
+// {
+//     if (mSensor != STEREO && mSensor != IMU_STEREO)
+//     {
+//         cerr << "ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial." << endl;
+//         exit(-1);
+//     }
 
-    cv::Mat imLeftToFeed, imRightToFeed;
-    if (settings_ && settings_->needToRectify())
-    {
-        cv::Mat M1l = settings_->M1l();
-        cv::Mat M2l = settings_->M2l();
-        cv::Mat M1r = settings_->M1r();
-        cv::Mat M2r = settings_->M2r();
+//     cv::Mat imLeftToFeed, imRightToFeed;
+//     if (settings_ && settings_->needToRectify())
+//     {
+//         cv::Mat M1l = settings_->M1l();
+//         cv::Mat M2l = settings_->M2l();
+//         cv::Mat M1r = settings_->M1r();
+//         cv::Mat M2r = settings_->M2r();
 
-        cv::remap(imLeft, imLeftToFeed, M1l, M2l, cv::INTER_LINEAR);
-        cv::remap(imRight, imRightToFeed, M1r, M2r, cv::INTER_LINEAR);
-    }
-    else if (settings_ && settings_->needToResize())
-    {
-        cv::resize(imLeft, imLeftToFeed, settings_->newImSize());
-        cv::resize(imRight, imRightToFeed, settings_->newImSize());
-    }
-    else
-    {
-        imLeftToFeed = imLeft.clone();
-        imRightToFeed = imRight.clone();
-    }
+//         cv::remap(imLeft, imLeftToFeed, M1l, M2l, cv::INTER_LINEAR);
+//         cv::remap(imRight, imRightToFeed, M1r, M2r, cv::INTER_LINEAR);
+//     }
+//     else if (settings_ && settings_->needToResize())
+//     {
+//         cv::resize(imLeft, imLeftToFeed, settings_->newImSize());
+//         cv::resize(imRight, imRightToFeed, settings_->newImSize());
+//     }
+//     else
+//     {
+//         imLeftToFeed = imLeft.clone();
+//         imRightToFeed = imRight.clone();
+//     }
 
-    // Check mode change
-    {
-        unique_lock<mutex> lock(mMutexMode);
-        if (mbActivateLocalizationMode)
-        {
-            mpLocalMapper->RequestStop();
+//     // Check mode change
+//     {
+//         unique_lock<mutex> lock(mMutexMode);
+//         if (mbActivateLocalizationMode)
+//         {
+//             mpLocalMapper->RequestStop();
 
-            // Wait until Local Mapping has effectively stopped
-            while (!mpLocalMapper->isStopped())
-            {
-                usleep(1000);
-            }
+//             // Wait until Local Mapping has effectively stopped
+//             while (!mpLocalMapper->isStopped())
+//             {
+//                 usleep(1000);
+//             }
 
-            mpTracker->InformOnlyTracking(true);
-            mbActivateLocalizationMode = false;
-        }
-        if (mbDeactivateLocalizationMode)
-        {
-            mpTracker->InformOnlyTracking(false);
-            mpLocalMapper->Release();
-            mbDeactivateLocalizationMode = false;
-        }
-    }
+//             mpTracker->InformOnlyTracking(true);
+//             mbActivateLocalizationMode = false;
+//         }
+//         if (mbDeactivateLocalizationMode)
+//         {
+//             mpTracker->InformOnlyTracking(false);
+//             mpLocalMapper->Release();
+//             mbDeactivateLocalizationMode = false;
+//         }
+//     }
 
-    // Check reset
-    {
-        unique_lock<mutex> lock(mMutexReset);
-        if (mbReset)
-        {
-            mpTracker->Reset();
-            mbReset = false;
-            mbResetActiveMap = false;
-        }
-        else if (mbResetActiveMap)
-        {
-            mpTracker->ResetActiveMap();
-            mbResetActiveMap = false;
-        }
-    }
+//     // Check reset
+//     {
+//         unique_lock<mutex> lock(mMutexReset);
+//         if (mbReset)
+//         {
+//             mpTracker->Reset();
+//             mbReset = false;
+//             mbResetActiveMap = false;
+//         }
+//         else if (mbResetActiveMap)
+//         {
+//             mpTracker->ResetActiveMap();
+//             mbResetActiveMap = false;
+//         }
+//     }
 
-    if (mSensor == System::IMU_STEREO)
-        for (size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
-            mpTracker->GrabImuData(vImuMeas[i_imu]);
+//     if (mSensor == System::IMU_STEREO)
+//         for (size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
+//             mpTracker->GrabImuData(vImuMeas[i_imu]);
 
-    // std::cout << "start GrabImageStereo" << std::endl;
-    Sophus::SE3f Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed, timestamp, filename);
+//     // std::cout << "start GrabImageStereo" << std::endl;
+//     Sophus::SE3f Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed, timestamp, filename);
 
-    // std::cout << "out grabber" << std::endl;
+//     // std::cout << "out grabber" << std::endl;
 
-    unique_lock<mutex> lock2(mMutexState);
-    mTrackingState = mpTracker->mState;
-    mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
-    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+//     unique_lock<mutex> lock2(mMutexState);
+//     mTrackingState = mpTracker->mState;
+//     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
+//     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
 
-    return Tcw;
-}
+//     return Tcw;
+// }
 
-Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp,
-                               const vector<IMU::Point> &vImuMeas, string filename)
-{
-    if (mSensor != RGBD && mSensor != IMU_RGBD)
-    {
-        cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << endl;
-        exit(-1);
-    }
+// Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp,
+//                                const vector<IMU::Point> &vImuMeas, string filename)
+// {
+//     if (mSensor != RGBD && mSensor != IMU_RGBD)
+//     {
+//         cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << endl;
+//         exit(-1);
+//     }
 
-    cv::Mat imToFeed = im.clone();
-    cv::Mat imDepthToFeed = depthmap.clone();
-    if (settings_ && settings_->needToResize())
-    {
-        cv::Mat resizedIm;
-        cv::resize(im, resizedIm, settings_->newImSize());
-        imToFeed = resizedIm;
+//     cv::Mat imToFeed = im.clone();
+//     cv::Mat imDepthToFeed = depthmap.clone();
+//     if (settings_ && settings_->needToResize())
+//     {
+//         cv::Mat resizedIm;
+//         cv::resize(im, resizedIm, settings_->newImSize());
+//         imToFeed = resizedIm;
 
-        cv::resize(depthmap, imDepthToFeed, settings_->newImSize());
-    }
+//         cv::resize(depthmap, imDepthToFeed, settings_->newImSize());
+//     }
 
-    // Check mode change
-    {
-        unique_lock<mutex> lock(mMutexMode);
-        if (mbActivateLocalizationMode)
-        {
-            mpLocalMapper->RequestStop();
+//     // Check mode change
+//     {
+//         unique_lock<mutex> lock(mMutexMode);
+//         if (mbActivateLocalizationMode)
+//         {
+//             mpLocalMapper->RequestStop();
 
-            // Wait until Local Mapping has effectively stopped
-            while (!mpLocalMapper->isStopped())
-            {
-                usleep(1000);
-            }
+//             // Wait until Local Mapping has effectively stopped
+//             while (!mpLocalMapper->isStopped())
+//             {
+//                 usleep(1000);
+//             }
 
-            mpTracker->InformOnlyTracking(true);
-            mbActivateLocalizationMode = false;
-        }
-        if (mbDeactivateLocalizationMode)
-        {
-            mpTracker->InformOnlyTracking(false);
-            mpLocalMapper->Release();
-            mbDeactivateLocalizationMode = false;
-        }
-    }
+//             mpTracker->InformOnlyTracking(true);
+//             mbActivateLocalizationMode = false;
+//         }
+//         if (mbDeactivateLocalizationMode)
+//         {
+//             mpTracker->InformOnlyTracking(false);
+//             mpLocalMapper->Release();
+//             mbDeactivateLocalizationMode = false;
+//         }
+//     }
 
-    // Check reset
-    {
-        unique_lock<mutex> lock(mMutexReset);
-        if (mbReset)
-        {
-            mpTracker->Reset();
-            mbReset = false;
-            mbResetActiveMap = false;
-        }
-        else if (mbResetActiveMap)
-        {
-            mpTracker->ResetActiveMap();
-            mbResetActiveMap = false;
-        }
-    }
+//     // Check reset
+//     {
+//         unique_lock<mutex> lock(mMutexReset);
+//         if (mbReset)
+//         {
+//             mpTracker->Reset();
+//             mbReset = false;
+//             mbResetActiveMap = false;
+//         }
+//         else if (mbResetActiveMap)
+//         {
+//             mpTracker->ResetActiveMap();
+//             mbResetActiveMap = false;
+//         }
+//     }
 
-    if (mSensor == System::IMU_RGBD)
-        for (size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
-            mpTracker->GrabImuData(vImuMeas[i_imu]);
+//     if (mSensor == System::IMU_RGBD)
+//         for (size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
+//             mpTracker->GrabImuData(vImuMeas[i_imu]);
 
-    Sophus::SE3f Tcw = mpTracker->GrabImageRGBD(imToFeed, imDepthToFeed, timestamp, filename);
+//     Sophus::SE3f Tcw = mpTracker->GrabImageRGBD(imToFeed, imDepthToFeed, timestamp, filename);
 
-    unique_lock<mutex> lock2(mMutexState);
-    mTrackingState = mpTracker->mState;
-    mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
-    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
-    return Tcw;
-}
+//     unique_lock<mutex> lock2(mMutexState);
+//     mTrackingState = mpTracker->mState;
+//     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
+//     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+//     return Tcw;
+// }
 
-Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point> &vImuMeas,
-                                    string filename)
-{
-    {
-        unique_lock<mutex> lock(mMutexReset);
-        if (mbShutDown)
-            return Sophus::SE3f();
-    }
+// Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point> &vImuMeas,
+//                                     string filename)
+// {
+//     {
+//         unique_lock<mutex> lock(mMutexReset);
+//         if (mbShutDown)
+//             return Sophus::SE3f();
+//     }
 
-    if (mSensor != MONOCULAR && mSensor != IMU_MONOCULAR)
-    {
-        cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial."
-             << endl;
-        exit(-1);
-    }
+//     if (mSensor != MONOCULAR && mSensor != IMU_MONOCULAR)
+//     {
+//         cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial."
+//              << endl;
+//         exit(-1);
+//     }
 
-    cv::Mat imToFeed = im.clone();
-    if (settings_ && settings_->needToResize())
-    {
-        cv::Mat resizedIm;
-        cv::resize(im, resizedIm, settings_->newImSize());
-        imToFeed = resizedIm;
-    }
+//     cv::Mat imToFeed = im.clone();
+//     if (settings_ && settings_->needToResize())
+//     {
+//         cv::Mat resizedIm;
+//         cv::resize(im, resizedIm, settings_->newImSize());
+//         imToFeed = resizedIm;
+//     }
 
-    // Check mode change
-    {
-        unique_lock<mutex> lock(mMutexMode);
-        if (mbActivateLocalizationMode)
-        {
-            mpLocalMapper->RequestStop();
+//     // Check mode change
+//     {
+//         unique_lock<mutex> lock(mMutexMode);
+//         if (mbActivateLocalizationMode)
+//         {
+//             mpLocalMapper->RequestStop();
 
-            // Wait until Local Mapping has effectively stopped
-            while (!mpLocalMapper->isStopped())
-            {
-                usleep(1000);
-            }
+//             // Wait until Local Mapping has effectively stopped
+//             while (!mpLocalMapper->isStopped())
+//             {
+//                 usleep(1000);
+//             }
 
-            mpTracker->InformOnlyTracking(true);
-            mbActivateLocalizationMode = false;
-        }
-        if (mbDeactivateLocalizationMode)
-        {
-            mpTracker->InformOnlyTracking(false);
-            mpLocalMapper->Release();
-            mbDeactivateLocalizationMode = false;
-        }
-    }
+//             mpTracker->InformOnlyTracking(true);
+//             mbActivateLocalizationMode = false;
+//         }
+//         if (mbDeactivateLocalizationMode)
+//         {
+//             mpTracker->InformOnlyTracking(false);
+//             mpLocalMapper->Release();
+//             mbDeactivateLocalizationMode = false;
+//         }
+//     }
 
-    // Check reset
-    {
-        unique_lock<mutex> lock(mMutexReset);
-        if (mbReset)
-        {
-            mpTracker->Reset();
-            mbReset = false;
-            mbResetActiveMap = false;
-        }
-        else if (mbResetActiveMap)
-        {
-            cout << "SYSTEM-> Reseting active map in monocular case" << endl;
-            mpTracker->ResetActiveMap();
-            mbResetActiveMap = false;
-        }
-    }
+//     // Check reset
+//     {
+//         unique_lock<mutex> lock(mMutexReset);
+//         if (mbReset)
+//         {
+//             mpTracker->Reset();
+//             mbReset = false;
+//             mbResetActiveMap = false;
+//         }
+//         else if (mbResetActiveMap)
+//         {
+//             cout << "SYSTEM-> Reseting active map in monocular case" << endl;
+//             mpTracker->ResetActiveMap();
+//             mbResetActiveMap = false;
+//         }
+//     }
 
-    if (mSensor == System::IMU_MONOCULAR)
-        for (size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
-            mpTracker->GrabImuData(vImuMeas[i_imu]);
+//     if (mSensor == System::IMU_MONOCULAR)
+//         for (size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
+//             mpTracker->GrabImuData(vImuMeas[i_imu]);
 
-    Sophus::SE3f Tcw = mpTracker->GrabImageMonocular(imToFeed, timestamp, filename);
+//     Sophus::SE3f Tcw = mpTracker->GrabImageMonocular(imToFeed, timestamp, filename);
 
-    unique_lock<mutex> lock2(mMutexState);
-    mTrackingState = mpTracker->mState;
-    mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
-    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+//     unique_lock<mutex> lock2(mMutexState);
+//     mTrackingState = mpTracker->mState;
+//     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
+//     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
 
-    return Tcw;
-}
+//     return Tcw;
+// }
 
 Sophus::SE3f System::TrackMonocularGPS(const cv::Mat &im, const double &timestamp, GPSPos gps,
                                        const vector<IMU::Point> &vImuMeas, string filename)

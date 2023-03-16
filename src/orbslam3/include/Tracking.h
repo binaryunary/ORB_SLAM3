@@ -71,10 +71,9 @@ class Tracking
     bool ParseIMUParamFile(cv::FileStorage &fSettings);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
-    Sophus::SE3f GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp,
-                                 string filename);
-    Sophus::SE3f GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const double &timestamp, string filename);
-    Sophus::SE3f GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
+    // Sophus::SE3f GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp, string filename);
+    // Sophus::SE3f GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const double &timestamp, string filename);
+    // Sophus::SE3f GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
     Sophus::SE3f GrabImageMonocularGPS(const cv::Mat &im, const double &timestamp, const GPSPos &gps, string filename);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
@@ -202,7 +201,7 @@ class Tracking
     void Track();
 
     // Map initialization for stereo and RGB-D
-    void StereoInitialization();
+    // void StereoInitialization();
 
     // Map initialization for monocular
     void MonocularInitialization();
@@ -358,6 +357,8 @@ class Tracking
     int initID, lastID;
 
     Sophus::SE3f mTlr;
+
+    Settings *mSettings;
 
     void newParameterLoader(Settings *settings);
 
