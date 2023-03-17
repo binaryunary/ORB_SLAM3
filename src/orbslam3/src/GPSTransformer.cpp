@@ -1,14 +1,14 @@
 #include "GPSTransformer.h"
-#include <proj_api.h>
 #include <Eigen/Dense>
+#include <proj_api.h>
 
 using namespace ORB_SLAM3;
 
 GPSTransformer::GPSTransformer(Settings *settings)
     : R(settings->gpsTransformRotation()), t(settings->gpsTransformTranslation()), c(settings->gpsTransformScale())
 {
-    projPJ pjMercator = pj_init_plus("+proj=merc +ellps=WGS84 +datum=WGS84 +units=m");
-    projPJ pjWGS84 = pj_init_plus("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
+    pjMercator = pj_init_plus("+proj=merc +ellps=WGS84 +datum=WGS84 +units=m");
+    pjWGS84 = pj_init_plus("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
 }
 
 GPSTransformer::~GPSTransformer()

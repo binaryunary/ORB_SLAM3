@@ -570,7 +570,7 @@ void Settings::readGPSTransform(cv::FileStorage &fSettings)
     cv::Mat matTrans = readParameter<cv::Mat>(fSettings, "GPS.TransformTranslation", found, false);
     Eigen::Matrix3f matTransEigen;
     cv::cv2eigen(matTrans, matTransEigen);
-    gpsTransformTranslation_ = Eigen::Vector3f(matTransEigen(0, 0), matTransEigen(1, 0), matTransEigen(2, 0));
+    gpsTransformTranslation_ = Eigen::Vector3f(matTransEigen(0, 0), matTransEigen(0, 1), matTransEigen(0, 2));
 
     gpsTransformScale_ = readParameter<double>(fSettings, "GPS.TransformScale", found, false);
 }
