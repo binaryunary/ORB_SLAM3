@@ -2412,18 +2412,18 @@ void Tracking::Track()
     }
     else
     {
-        Eigen::Vector3f trCameraCenter = mGPSTransformer.slamToMercator(cameraCenter);
+        Eigen::Vector3f trCameraCenter = mGPSTransformer.transformSLAM(cameraCenter);
 
-        double x = trCameraCenter.x();
-        double y = trCameraCenter.y();
+        // double x = trCameraCenter.x();
+        // double y = trCameraCenter.y();
 
-        mGPSTransformer.mercatorToWGS84(x, y);
+        // mGPSTransformer.mercatorToWGS84(x, y);
 
         cout << "Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
         cout << " [MERC] : " << trCameraCenter.x() << " " << trCameraCenter.y() << " " << trCameraCenter.z() << endl;
-        cout << setprecision (15) << " [WGS] : " << x << " " << y << " " << trCameraCenter.z() << endl;
+        // cout << setprecision (15) << " [WGS] : " << x << " " << y << " " << trCameraCenter.z() << endl;
 
-        mGPSEstimate.push_back({x * RAD_TO_DEG, y * RAD_TO_DEG, trCameraCenter.z()});
+        mGPSEstimate.push_back({trCameraCenter.x(), trCameraCenter.y(), trCameraCenter.z()});
     }
 
     cout << ss.str() << endl;

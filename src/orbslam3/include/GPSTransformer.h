@@ -16,7 +16,10 @@ class GPSTransformer
     void mercatorToWGS84(double &x, double &y);
 
     // TODO: Move to a separate class
-    Eigen::Vector3f slamToMercator(Eigen::Vector3f point);
+    /**
+     * Transforms SLAM coordinagtes to another coordinate system using transformation parameters from the settings file.
+    */
+    Eigen::Vector3f transformSLAM(Eigen::Vector3f point);
 
   private:
     projPJ pjWGS84;

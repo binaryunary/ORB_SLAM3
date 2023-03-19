@@ -32,7 +32,7 @@ void GPSTransformer::mercatorToWGS84(double &x, double &y)
     y = radY * RAD_TO_DEG;
 }
 
-Eigen::Vector3f GPSTransformer::slamToMercator(Eigen::Vector3f point)
+Eigen::Vector3f GPSTransformer::transformSLAM(Eigen::Vector3f point)
 {
     return t + c * R * point;
 }

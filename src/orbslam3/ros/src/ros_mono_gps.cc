@@ -84,11 +84,11 @@ int main(int argc, char **argv)
 
     ros::spin();
 
-    // Stop all threads
-    SLAM.Shutdown();
-
     // Save camera trajectory
     SLAM.SaveData();
+
+    // Stop all threads
+    SLAM.Shutdown();
 
     ros::shutdown();
 
