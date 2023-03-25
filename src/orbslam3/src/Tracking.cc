@@ -2408,22 +2408,12 @@ void Tracking::Track()
     std::stringstream ss;
     if (!mbOnlyTracking)
     {
-        ss << "Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
+        ss << "[M] Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
     }
     else
     {
-        Eigen::Vector3f trCameraCenter = mGPSTransformer.transformSLAM(cameraCenter);
-
-        // double x = trCameraCenter.x();
-        // double y = trCameraCenter.y();
-
-        // mGPSTransformer.mercatorToWGS84(x, y);
-
-        cout << "Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
-        cout << " [MERC] : " << trCameraCenter.x() << " " << trCameraCenter.y() << " " << trCameraCenter.z() << endl;
-        // cout << setprecision (15) << " [WGS] : " << x << " " << y << " " << trCameraCenter.z() << endl;
-
-        mGPSEstimate.push_back({trCameraCenter.x(), trCameraCenter.y(), trCameraCenter.z()});
+        cout << "[T] Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
+        mSLAMEstimate.push_back({cameraCenter.x(), cameraCenter.y(), cameraCenter.z()});
     }
 
     cout << ss.str() << endl;

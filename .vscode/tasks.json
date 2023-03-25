@@ -36,7 +36,7 @@
     {
       "label": "source_env",
       "type": "shell",
-      "command": "source ${workspaceFolder}/devel_debug/setup.bash",
+      "command": "source ${workspaceFolder}/devel_release/setup.bash",
     }
   ]
 }

@@ -4,7 +4,7 @@
 # System config
 #--------------------------------------------------------------------------------------------
 
-System.SaveRoot: "/workspaces/orbslam-out"
+System.SaveRoot: "/orbslam-out"
 
 # When the variables are commented, the system doesn't load a previous session or not store the current one
 

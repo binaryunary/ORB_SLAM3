@@ -766,7 +766,7 @@ void System::SaveData()
     SaveKeyFrameTrajectoryTUMGPS();
     SaveMapPoints();
     SaveSLAMEstimate();
-    SaveGPSEstimate();
+    // SaveGPSEstimate();
 }
 
 void System::SaveKeyFrameTrajectoryTUMGPS()
@@ -836,7 +836,18 @@ void System::SaveMapPoints()
 
 void System::SaveSLAMEstimate()
 {
-    // TODO: Save the SLAM estimate to a file
+    fs::path gpsEstimatesFile = fs::path(settings_->saveRoot()) / fs::path("SLAMEstimates.txt");
+    ofstream fGPSe;
+    fGPSe.open(gpsEstimatesFile.string().c_str());
+    fGPSe << fixed;
+
+    cout << endl << "Saving SLAM estimates to " << gpsEstimatesFile << endl;
+    for (size_t i = 0; i < mpTracker->mGPSEstimate.size(); i++)
+    {
+        GPSPos pos = mpTracker->mSLAMEstimate[i];
+        fGPSe << setprecision(14) << pos.lat << " " << pos.lon << " " << pos.alt << endl;
+    }
+    fGPSe.close();
 }
 
 void System::SaveGPSEstimate()

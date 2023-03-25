@@ -5,11 +5,36 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "ROS: Launch",
-      "type": "ros",
+      "name": "(gdb) Launch",
+      "type": "cppdbg",
       "request": "launch",
-      "target": "${workspaceFolder}/testbench/sekonix-mono-gps.launch",
-      "preLaunchTask": "source_env"
-    }
+      "program": "${workspaceFolder}/install_release/lib/orbslam3/mono_gps",
+      "args": [
+        "${workspaceFolder}/Vocabulary/ORBvoc.txt",
+        "${workspaceFolder}/testbench/sekonix-mono-gps.yaml",
+      ],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [
+        {
+          "name": "LD_LIBRARY_PATH",
+          "value": "/opt/ros/melodic/lib:${workspaceFolder}/install_release/lib"
+        },
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Set Disassembly Flavor to Intel",
+          "text": "-gdb-set disassembly-flavor intel",
+          "ignoreFailures": true
+        }
+      ]
+    },
   ]
 }
