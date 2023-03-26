@@ -206,7 +206,7 @@ Settings::Settings(const std::string &configFile, const int &sensor)
     cout << "\t-Loaded ORB settings" << endl;
     readViewer(fSettings);
     cout << "\t-Loaded viewer settings" << endl;
-    readLoadAndSave(fSettings);
+    readAtlasFile(fSettings);
     cout << "\t-Loaded Atlas settings" << endl;
     readOtherParameters(fSettings);
     cout << "\t-Loaded GPS transformation parameters" << endl;
@@ -550,6 +550,15 @@ void Settings::readLoadAndSave(cv::FileStorage &fSettings)
     if (found)
     {
         sSaveto_ = (fs::path(sSaveRoot_) / fs::path(saveFile)).string();
+    }
+}
+
+void Settings::readAtlasFile(cv::FileStorage &fSettings) {
+    bool found;
+
+    std::string atlasFile = readParameter<string>(fSettings, "System.AtlasFile", found, true);
+    if (found){
+        sAtlasFile_ = (fs::path(sSaveRoot_) / fs::path(atlasFile)).string();
     }
 }
 

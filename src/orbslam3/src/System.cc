@@ -43,7 +43,7 @@ namespace ORB_SLAM3
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer,
-               const int initFr, const string &strSequence)
+               bool bLocalizationOnly, const int initFr, const string &strSequence)
     : mSensor(sensor), mpViewer(static_cast<Viewer *>(NULL)), mbReset(false), mbResetActiveMap(false),
       mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
 {
@@ -87,27 +87,10 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     if (!node.empty() && node.isString() && node.string() == "1.0")
     {
         settings_ = new Settings(strSettingsFile, mSensor);
-
-        mStrLoadAtlasFromFile = settings_->atlasLoadFile();
-        mStrSaveAtlasToFile = settings_->atlasSaveFile();
-
         cout << (*settings_) << endl;
     }
-    else
-    {
-        settings_ = nullptr;
-        cv::FileNode node = fsSettings["System.LoadAtlasFromFile"];
-        if (!node.empty() && node.isString())
-        {
-            mStrLoadAtlasFromFile = (string)node;
-        }
 
-        node = fsSettings["System.SaveAtlasToFile"];
-        if (!node.empty() && node.isString())
-        {
-            mStrSaveAtlasToFile = (string)node;
-        }
-    }
+    // TODO: Should we exit if settings are not valid?
 
     node = fsSettings["loopClosing"];
     bool activeLC = true;
@@ -120,55 +103,30 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     bool loadedAtlas = false;
 
-    if (mStrLoadAtlasFromFile.empty())
+    cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
+    mpVocabulary = new ORBVocabulary();
+    bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
+    if (!bVocLoad)
     {
-        // Load ORB Vocabulary
-        cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
+        cerr << "Wrong path to vocabulary. " << endl;
+        cerr << "Falied to open at: " << strVocFile << endl;
+        exit(-1);
+    }
+    cout << "Vocabulary loaded!" << endl << endl;
 
-        mpVocabulary = new ORBVocabulary();
-        bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-        if (!bVocLoad)
-        {
-            cerr << "Wrong path to vocabulary. " << endl;
-            cerr << "Falied to open at: " << strVocFile << endl;
-            exit(-1);
-        }
-        cout << "Vocabulary loaded!" << endl << endl;
+    // Create KeyFrame Database
+    mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
-        // Create KeyFrame Database
-        mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-
+    if (!bLocalizationOnly)
+    {
         // Create the Atlas
-        cout << "Initialization of Atlas from scratch " << endl;
+        cout << "MAPPING mode activated, initializing Atlas from scratch " << endl;
         mpAtlas = new Atlas(0);
     }
     else
     {
-        // If the Atlas is loaded from file, go into localization mode
-        mbActivateLocalizationMode = true;
-        cout << "Alas loaded from, localization mode activated." << endl;
-
-        // Load ORB Vocabulary
-        cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
-
-        mpVocabulary = new ORBVocabulary();
-        bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-        if (!bVocLoad)
-        {
-            cerr << "Wrong path to vocabulary. " << endl;
-            cerr << "Falied to open at: " << strVocFile << endl;
-            exit(-1);
-        }
-        cout << "Vocabulary loaded!" << endl << endl;
-
-        // Create KeyFrame Database
-        mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-
-        cout << "Load File" << endl;
-
-        // Load the file with an earlier session
+        cout << "LOCALIZATION mode activated, loading Atlas from " << settings_->atlasFile() << endl;
         // clock_t start = clock();
-        cout << "Initialization of Atlas from file: " << mStrLoadAtlasFromFile << endl;
         bool isRead = LoadAtlas(FileType::BINARY_FILE);
 
         if (!isRead)
@@ -176,16 +134,12 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
             cout << "Error to load the file, please try with other session file or vocabulary file" << endl;
             exit(-1);
         }
-        // mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-
-        // cout << "KF in DB: " << mpKeyFrameDatabase->mnNumKFs << "; words: " << mpKeyFrameDatabase->mnNumWords <<
-        // endl;
 
         cout << "Total maps in Atlas: " << mpAtlas->GetAllMaps().size() << endl;
-
         loadedAtlas = true;
 
-        // mpAtlas->CreateNewMap();
+        // Currently loads the first map
+        // TODO: load the map with the most KFs or try merging all maps and then load the map with most KFs?
         vector<Map *> map_vector = mpAtlas->GetAllMaps();
         mpAtlas->ChangeMap(map_vector.at(0));
 
@@ -242,6 +196,13 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
+
+    if (bLocalizationOnly){
+        enableLocalizationMode();
+    }
+    else {
+        disableLocalizationMode();
+    }
 
     // usleep(10*1000*1000);
 
@@ -529,22 +490,11 @@ Sophus::SE3f System::TrackMonocularGPS(const cv::Mat &im, const double &timestam
         unique_lock<mutex> lock(mMutexMode);
         if (mbActivateLocalizationMode)
         {
-            mpLocalMapper->RequestStop();
-
-            // Wait until Local Mapping has effectively stopped
-            while (!mpLocalMapper->isStopped())
-            {
-                usleep(1000);
-            }
-
-            mpTracker->InformOnlyTracking(true);
-            mbActivateLocalizationMode = false;
+            enableLocalizationMode();
         }
         if (mbDeactivateLocalizationMode)
         {
-            mpTracker->InformOnlyTracking(false);
-            mpLocalMapper->Release();
-            mbDeactivateLocalizationMode = false;
+            disableLocalizationMode();
         }
     }
 
@@ -649,9 +599,10 @@ void System::Shutdown()
     /*usleep(5000);
 }*/
 
-    if (!mStrSaveAtlasToFile.empty())
+    cout << "mbLocalizationModeEnabled: " << mbLocalizationModeEnabled << endl;
+    if (!mbLocalizationModeEnabled)
     {
-        Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Atlas saving to file " + settings_->atlasFile(), Verbose::VERBOSITY_NORMAL);
         SaveAtlas(FileType::BINARY_FILE);
     }
 
@@ -763,10 +714,15 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
 
 void System::SaveData()
 {
-    SaveKeyFrameTrajectoryTUMGPS();
-    SaveMapPoints();
-    SaveSLAMEstimate();
-    // SaveGPSEstimate();
+    if (mbLocalizationModeEnabled)
+    {
+        SaveSLAMEstimate();
+        // SaveGPSEstimate();
+    }
+    else {
+        SaveKeyFrameTrajectoryTUMGPS();
+        SaveMapPoints();
+    }
 }
 
 void System::SaveKeyFrameTrajectoryTUMGPS()
@@ -1616,51 +1572,37 @@ void System::InsertTrackTime(double &time)
 
 void System::SaveAtlas(int type)
 {
-    if (!mStrSaveAtlasToFile.empty())
+    // clock_t start = clock();
+
+    // Save the current session
+    mpAtlas->PreSave();
+
+    string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+    std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
+    string strVocabularyName = mStrVocabularyFilePath.substr(found + 1);
+
+    if (type == TEXT_FILE) // File text
     {
-        // clock_t start = clock();
+        cout << "Starting to write the save text file " << endl;
+        std::remove(settings_->atlasFile().c_str());
+        std::ofstream ofs(settings_->atlasFile(), std::ios::binary);
+        boost::archive::text_oarchive oa(ofs);
 
-        // Save the current session
-        mpAtlas->PreSave();
-
-        string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
-        std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
-        string strVocabularyName = mStrVocabularyFilePath.substr(found + 1);
-
-        if (type == TEXT_FILE) // File text
-        {
-            cout << "Starting to write the save text file " << endl;
-            std::remove(mStrSaveAtlasToFile.c_str());
-            std::ofstream ofs(mStrSaveAtlasToFile, std::ios::binary);
-            boost::archive::text_oarchive oa(ofs);
-
-            oa << strVocabularyName;
-            oa << strVocabularyChecksum;
-            oa << mpAtlas;
-            cout << "End to write the save text file" << endl;
-        }
-        else if (type == BINARY_FILE) // File binary
-        {
-            cout << "Starting to write the save binary file" << endl;
-            std::remove(mStrSaveAtlasToFile.c_str());
-            std::ofstream ofs(mStrSaveAtlasToFile, std::ios::binary);
-            boost::archive::binary_oarchive oa(ofs);
-            oa << strVocabularyName;
-            oa << strVocabularyChecksum;
-            oa << mpAtlas;
-            cout << "End to write save binary file" << endl;
-        }
-        // else if (type == XML_FILE) // XML file
-        // {
-        //     cout << "Starting to write the save xml file" << endl;
-        //     std::remove(pathSaveFileName.c_str());
-        //     std::ofstream ofs(pathSaveFileName, std::ios::binary);
-        //     boost::archive::xml_oarchive oa(ofs);
-        //     oa << strVocabularyName;
-        //     oa << strVocabularyChecksum;
-        //     oa << mpAtlas;
-        //     cout << "End to write save xml file" << endl;
-        // }
+        oa << strVocabularyName;
+        oa << strVocabularyChecksum;
+        oa << mpAtlas;
+        cout << "End to write the save text file" << endl;
+    }
+    else if (type == BINARY_FILE) // File binary
+    {
+        cout << "Starting to write the save binary file" << endl;
+        std::remove(settings_->atlasFile().c_str());
+        std::ofstream ofs(settings_->atlasFile(), std::ios::binary);
+        boost::archive::binary_oarchive oa(ofs);
+        oa << strVocabularyName;
+        oa << strVocabularyChecksum;
+        oa << mpAtlas;
+        cout << "End to write save binary file" << endl;
     }
 }
 
@@ -1672,7 +1614,7 @@ bool System::LoadAtlas(int type)
     if (type == TEXT_FILE) // File text
     {
         cout << "Starting to read the save text file " << endl;
-        std::ifstream ifs(mStrLoadAtlasFromFile, std::ios::binary);
+        std::ifstream ifs(settings_->atlasFile(), std::ios::binary);
         if (!ifs.good())
         {
             cout << "Load file not found" << endl;
@@ -1688,7 +1630,7 @@ bool System::LoadAtlas(int type)
     else if (type == BINARY_FILE) // File binary
     {
         cout << "Starting to read the save binary file" << endl;
-        std::ifstream ifs(mStrLoadAtlasFromFile, std::ios::binary);
+        std::ifstream ifs(settings_->atlasFile(), std::ios::binary);
         if (!ifs.good())
         {
             cout << "Load file not found" << endl;
@@ -1761,6 +1703,28 @@ string System::CalculateCheckSum(string filename, int type)
     }
 
     return checksum;
+}
+
+void System::enableLocalizationMode()
+{
+    mpLocalMapper->RequestStop();
+    // Wait until Local Mapping has effectively stopped
+    while (!mpLocalMapper->isStopped())
+    {
+        usleep(1000);
+    }
+
+    mpTracker->InformOnlyTracking(true);
+    mbActivateLocalizationMode = false;
+    mbLocalizationModeEnabled = true;
+}
+
+void System::disableLocalizationMode()
+{
+    mpTracker->InformOnlyTracking(false);
+    mpLocalMapper->Release();
+    mbDeactivateLocalizationMode = false;
+    mbLocalizationModeEnabled = false;
 }
 
 } // namespace ORB_SLAM3

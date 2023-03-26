@@ -105,7 +105,7 @@ class System
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
     System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true,
-           const int initFr = 0, const string &strSequence = std::string());
+           bool bLocalizationOnly = false, const int initFr = 0, const string &strSequence = std::string());
 
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
@@ -212,6 +212,10 @@ class System
 
     string CalculateCheckSum(string filename, int type);
 
+    // Manage tracking state changes
+    void enableLocalizationMode();
+    void disableLocalizationMode();
+
     // Input sensor
     eSensor mSensor;
 
@@ -259,6 +263,8 @@ class System
     bool mbActivateLocalizationMode;
     bool mbDeactivateLocalizationMode;
 
+    bool mbLocalizationModeEnabled;
+
     // Shutdown flag
     bool mbShutDown;
 
@@ -267,10 +273,6 @@ class System
     std::vector<MapPoint *> mTrackedMapPoints;
     std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
     std::mutex mMutexState;
-
-    //
-    string mStrLoadAtlasFromFile;
-    string mStrSaveAtlasToFile;
 
     string mStrVocabularyFilePath;
 
