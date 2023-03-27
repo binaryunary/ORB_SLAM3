@@ -2412,7 +2412,7 @@ void Tracking::Track()
     }
     else
     {
-        cout << "[T] Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
+        cout << "[L] Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
         mSLAMEstimate.push_back({cameraCenter.x(), cameraCenter.y(), cameraCenter.z()});
     }
 

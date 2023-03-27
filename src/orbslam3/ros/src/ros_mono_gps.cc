@@ -60,23 +60,19 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "Mono");
     ros::start();
 
-    if (argc < 3)
+    if (argc < 4)
     {
-        cerr << endl << "Usage: rosrun orbslam mono_gps <path_to_vocabulary> <path_to_settings> [mapping|localization] [<out_dir>]" << endl;
+        cerr << endl << "Usage: rosrun orbslam mono_gps <path_to_vocabulary> <path_to_settings> <'mapping'|'localization'> [<out_dir>]" << endl;
         ros::shutdown();
         return 1;
     }
 
     std::string vocPath = argv[1];
     std::string settingsPath = argv[2];
-    bool activateLocalizationMode = false;
+    bool activateLocalizationMode = std::string(argv[3]) == "localization";
     std::string outDir = boost::filesystem::current_path().string();
 
-    // Defaults to mapping mode
-    if (argc == 4 && std::string(argv[3]) == "localization") {
-        activateLocalizationMode = true;
-        cout << "Localization mode activated: " << activateLocalizationMode << endl;
-    }
+    cout << "Localization mode activated: " << activateLocalizationMode << endl;
 
     if (argc == 5) {
         outDir = argv[4];

@@ -125,7 +125,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     }
     else
     {
-        cout << "LOCALIZATION mode activated, loading Atlas from " << settings_->atlasFile() << endl;
+        cout << "LOCALIZATION mode activated" << endl;
         // clock_t start = clock();
         bool isRead = LoadAtlas(FileType::BINARY_FILE);
 
@@ -602,7 +602,6 @@ void System::Shutdown()
     cout << "mbLocalizationModeEnabled: " << mbLocalizationModeEnabled << endl;
     if (!mbLocalizationModeEnabled)
     {
-        Verbose::PrintMess("Atlas saving to file " + settings_->atlasFile(), Verbose::VERBOSITY_NORMAL);
         SaveAtlas(FileType::BINARY_FILE);
     }
 
@@ -1572,6 +1571,8 @@ void System::InsertTrackTime(double &time)
 
 void System::SaveAtlas(int type)
 {
+
+    cout << "Writing Atlas to " << settings_->atlasFile() << endl;
     // clock_t start = clock();
 
     // Save the current session
@@ -1584,7 +1585,8 @@ void System::SaveAtlas(int type)
     if (type == TEXT_FILE) // File text
     {
         cout << "Starting to write the save text file " << endl;
-        std::remove(settings_->atlasFile().c_str());
+        int removeStatus = std::remove(settings_->atlasFile().c_str());
+        cout << "Remove status: " << removeStatus << endl;
         std::ofstream ofs(settings_->atlasFile(), std::ios::binary);
         boost::archive::text_oarchive oa(ofs);
 
@@ -1608,6 +1610,8 @@ void System::SaveAtlas(int type)
 
 bool System::LoadAtlas(int type)
 {
+    cout << "Loading Atlas from " << settings_->atlasFile() << endl;
+
     string strFileVoc, strVocChecksum;
     bool isRead = false;
 
