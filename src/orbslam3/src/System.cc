@@ -791,12 +791,19 @@ void System::SaveMapPoints()
 
 void System::SaveSLAMEstimate()
 {
-    fs::path gpsEstimatesFile = fs::path(settings_->outDir()) / fs::path("SLAMEstimates.txt");
+    string base = "SLAMEstimate_";
+    int index = 0;
+    fs::path gpsEstimatesFile = fs::path(settings_->outDir()) / fs::path(base + std::to_string(index) + ".txt");
+    while(fs::exists(gpsEstimatesFile)) {
+        ++index;
+        gpsEstimatesFile = fs::path(settings_->outDir()) / fs::path(base + std::to_string(index) + ".txt");
+    }
+
     ofstream fGPSe;
     fGPSe.open(gpsEstimatesFile.string().c_str());
     fGPSe << fixed;
 
-    cout << endl << "Saving SLAM estimates to " << gpsEstimatesFile << endl;
+    cout << endl << "Saving SLAM estimate to " << gpsEstimatesFile << endl;
     for (size_t i = 0; i < mpTracker->mGPSEstimate.size(); i++)
     {
         GPSPos pos = mpTracker->mSLAMEstimate[i];
