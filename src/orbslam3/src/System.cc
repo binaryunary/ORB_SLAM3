@@ -43,7 +43,7 @@ namespace ORB_SLAM3
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer,
-               bool bLocalizationOnly, const int initFr, const string &strSequence)
+               const bool bLocalizationOnly, const string &outDir, const int initFr, const string &strSequence)
     : mSensor(sensor), mpViewer(static_cast<Viewer *>(NULL)), mbReset(false), mbResetActiveMap(false),
       mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
 {
@@ -86,7 +86,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     cv::FileNode node = fsSettings["File.version"];
     if (!node.empty() && node.isString() && node.string() == "1.0")
     {
-        settings_ = new Settings(strSettingsFile, mSensor);
+        settings_ = new Settings(strSettingsFile, mSensor, outDir);
         cout << (*settings_) << endl;
     }
 
@@ -732,14 +732,14 @@ void System::SaveKeyFrameTrajectoryTUMGPS()
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
-    fs::path kfTrajectoryFile = fs::path(settings_->saveRoot()) / fs::path("KeyFrameTrajectory.txt");
+    fs::path kfTrajectoryFile = fs::path(settings_->outDir()) / fs::path("KeyFrameTrajectory.txt");
     ofstream fKFTrajectory;
     fKFTrajectory.open(kfTrajectoryFile.string().c_str());
     fKFTrajectory << fixed;
 
     cout << endl << "Saving KeyFrame trajectory to " << kfTrajectoryFile << " ..." << endl;
 
-    fs::path gpsFile = fs::path(settings_->saveRoot()) / fs::path("GPSTrajectory.txt");
+    fs::path gpsFile = fs::path(settings_->outDir()) / fs::path("GPSTrajectory.txt");
     ofstream fGPS;
     fGPS.open(gpsFile.string().c_str());
     fGPS << fixed;
@@ -770,7 +770,7 @@ void System::SaveKeyFrameTrajectoryTUMGPS()
 
 void System::SaveMapPoints()
 {
-    fs::path mapPointsFile = fs::path(settings_->saveRoot()) / fs::path("MapPoints.txt");
+    fs::path mapPointsFile = fs::path(settings_->outDir()) / fs::path("MapPoints.txt");
     ofstream fMP;
     fMP.open(mapPointsFile.string().c_str());
     fMP << fixed;
@@ -792,7 +792,7 @@ void System::SaveMapPoints()
 
 void System::SaveSLAMEstimate()
 {
-    fs::path gpsEstimatesFile = fs::path(settings_->saveRoot()) / fs::path("SLAMEstimates.txt");
+    fs::path gpsEstimatesFile = fs::path(settings_->outDir()) / fs::path("SLAMEstimates.txt");
     ofstream fGPSe;
     fGPSe.open(gpsEstimatesFile.string().c_str());
     fGPSe << fixed;
@@ -808,7 +808,7 @@ void System::SaveSLAMEstimate()
 
 void System::SaveGPSEstimate()
 {
-    fs::path gpsEstimatesFile = fs::path(settings_->saveRoot()) / fs::path("GPSEstimates.txt");
+    fs::path gpsEstimatesFile = fs::path(settings_->outDir()) / fs::path("GPSEstimates.txt");
     ofstream fGPSe;
     fGPSe.open(gpsEstimatesFile.string().c_str());
     fGPSe << fixed;

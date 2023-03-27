@@ -155,10 +155,13 @@ cv::Mat Settings::readParameter<cv::Mat>(cv::FileStorage &fSettings, const std::
     }
 }
 
-Settings::Settings(const std::string &configFile, const int &sensor)
-    : bNeedToUndistort_(false), bNeedToRectify_(false), bNeedToResize1_(false), bNeedToResize2_(false)
+Settings::Settings(const std::string &configFile, const int &sensor, const std::string &outDir)
+    : bNeedToUndistort_(false), bNeedToRectify_(false), bNeedToResize1_(false), bNeedToResize2_(false), sOutDir_(outDir)
 {
     sensor_ = sensor;
+
+    // Ensure outDir exists
+    fs::create_directories(outDir);
 
     // Open settings file
     cv::FileStorage fSettings(configFile, cv::FileStorage::READ);
@@ -200,8 +203,6 @@ Settings::Settings(const std::string &configFile, const int &sensor)
         readRGBD(fSettings);
         cout << "\t-Loaded RGB-D calibration" << endl;
     }
-    readSaveRoot(fSettings);
-    cout << "\t-Loaded save root" << endl;
     readORB(fSettings);
     cout << "\t-Loaded ORB settings" << endl;
     readViewer(fSettings);
@@ -543,13 +544,13 @@ void Settings::readLoadAndSave(cv::FileStorage &fSettings)
 
     std::string loadFile = readParameter<string>(fSettings, "System.LoadAtlasFromFile", found, false);
     if (found){
-        sLoadFrom_ = (fs::path(sSaveRoot_) / fs::path(loadFile)).string();
+        sLoadFrom_ = (fs::path(sOutDir_) / fs::path(loadFile)).string();
     }
 
     std::string saveFile = readParameter<string>(fSettings, "System.SaveAtlasToFile", found, false);
     if (found)
     {
-        sSaveto_ = (fs::path(sSaveRoot_) / fs::path(saveFile)).string();
+        sSaveto_ = (fs::path(sOutDir_) / fs::path(saveFile)).string();
     }
 }
 
@@ -558,15 +559,8 @@ void Settings::readAtlasFile(cv::FileStorage &fSettings) {
 
     std::string atlasFile = readParameter<string>(fSettings, "System.AtlasFile", found, true);
     if (found){
-        sAtlasFile_ = (fs::path(sSaveRoot_) / fs::path(atlasFile)).string();
+        sAtlasFile_ = (fs::path(sOutDir_) / fs::path(atlasFile)).string();
     }
-}
-
-void Settings::readSaveRoot(cv::FileStorage &fSettings)
-{
-    bool found;
-
-    sSaveRoot_ = readParameter<string>(fSettings, "System.SaveRoot", found, true);
 }
 
 void Settings::readGPSTransform(cv::FileStorage &fSettings)
@@ -638,9 +632,8 @@ void Settings::precomputeRectificationMaps()
 ostream &operator<<(std::ostream &output, const Settings &settings)
 {
     output << "System settings: " << endl;
-    output << "\t-SaveRoot: " << settings.sSaveRoot_ << endl;
-    output << "\t-AtlasLoadFile: " << settings.sLoadFrom_ << endl;
-    output << "\t-AtlasSaveFile: " << settings.sSaveto_ << endl;
+    output << "\t-OutDir: " << settings.sOutDir_ << endl;
+    output << "\t-AtlasFile: " << settings.sAtlasFile_ << endl;
 
     output << "GPS transformation: " << endl;
     output << "\t-Rotation: " << settings.gpsTransformRotation_ << endl;
