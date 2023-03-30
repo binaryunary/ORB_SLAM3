@@ -60,9 +60,9 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "Mono");
     ros::start();
 
-    if (argc < 4)
+    if (argc < 5)
     {
-        cerr << endl << "Usage: rosrun orbslam mono_gps <path_to_vocabulary> <path_to_settings> <'mapping'|'localization'> [<out_dir>]" << endl;
+        cerr << endl << "Usage: rosrun orbslam mono_gps <path_to_vocabulary> <path_to_settings> <'mapping'|'localization'> <out_dir> [<active_map>]" << endl;
         ros::shutdown();
         return 1;
     }
@@ -70,17 +70,18 @@ int main(int argc, char **argv)
     std::string vocPath = argv[1];
     std::string settingsPath = argv[2];
     bool activateLocalizationMode = std::string(argv[3]) == "localization";
-    std::string outDir = boost::filesystem::current_path().string();
+    std::string outDir = argv[4];
+    int activeMap = 0;
 
     cout << "Localization mode activated: " << activateLocalizationMode << endl;
 
-    if (argc == 5) {
-        outDir = argv[4];
-        cout << "Output directory: " << outDir << endl;
+    if (argc == 6) {
+        activeMap = std::stoi(argv[5]);
+        cout << "Active map: " << activeMap << endl;
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(vocPath, settingsPath, ORB_SLAM3::System::MONOCULAR, true, activateLocalizationMode, outDir);
+    ORB_SLAM3::System SLAM(vocPath, settingsPath, ORB_SLAM3::System::MONOCULAR, true, activateLocalizationMode, outDir, activeMap);
 
     ImageGrabber igb(&SLAM);
 

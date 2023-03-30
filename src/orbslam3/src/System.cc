@@ -44,7 +44,7 @@ namespace ORB_SLAM3
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer,
-               const bool bLocalizationOnly, const string &outDir, const int initFr, const string &strSequence)
+               const bool bLocalizationOnly, const string &outDir, const int activeMap, const int initFr, const string &strSequence)
     : mSensor(sensor), mpViewer(static_cast<Viewer *>(NULL)), mbReset(false), mbResetActiveMap(false),
       mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
 {
@@ -139,10 +139,10 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         cout << "Total maps in Atlas: " << mpAtlas->GetAllMaps().size() << endl;
         loadedAtlas = true;
 
-        // Currently loads the first map
-        // TODO: load the map with the most KFs or try merging all maps and then load the map with most KFs?
         vector<Map *> map_vector = mpAtlas->GetAllMaps();
-        mpAtlas->ChangeMap(map_vector.at(0));
+        cout << "Setting active map to " << activeMap << " with " << map_vector.at(activeMap)->GetAllKeyFrames().size()
+             << " KFs and " << map_vector.at(activeMap)->GetAllMapPoints().size() << " MPs" << endl;
+        mpAtlas->ChangeMap(map_vector.at(activeMap));
 
         // clock_t timeElapsed = clock() - start;
         // unsigned msElapsed = timeElapsed / (CLOCKS_PER_SEC / 1000);
@@ -727,81 +727,91 @@ void System::SaveData()
 
 void System::SaveKeyFrameTrajectoryTUMGPS()
 {
-    vector<KeyFrame *> vpKFs = mpAtlas->GetAllKeyFrames();
-    sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
-
-    // Transform all keyframes so that the first keyframe is at the origin.
-    // After a loop closure the first keyframe might not be at the origin.
-    fs::path kfTrajectoryFile = fs::path(settings_->outDir()) / fs::path("kf_trajectory.txt");
-    ofstream fKFTrajectory;
-    fKFTrajectory.open(kfTrajectoryFile.string().c_str());
-    fKFTrajectory << fixed;
-
-    cout << endl << "Saving KeyFrame trajectory to " << kfTrajectoryFile << " ..." << endl;
-
-    fs::path gpsFile = fs::path(settings_->outDir()) / fs::path("kf_trajectory_gt.txt");
-    ofstream fGPS;
-    fGPS.open(gpsFile.string().c_str());
-    fGPS << fixed;
-
-    cout << endl << "Saving GPS data to " << gpsFile << " ..." << endl;
-
-    for (size_t i = 0; i < vpKFs.size(); i++)
+    vector<Map *> allMaps = mpAtlas->GetAllMaps();
+    for (int i = 0; i < mpAtlas->GetAllMaps().size(); i++)
     {
-        KeyFrame *pKF = vpKFs[i];
+        Map *pMap = allMaps[i];
+        vector<KeyFrame *> vpKFs = pMap->GetAllKeyFrames();
+        sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
 
-        // pKF->SetPose(pKF->GetPose()*Two);
+        // Transform all keyframes so that the first keyframe is at the origin.
+        // After a loop closure the first keyframe might not be at the origin.
+        fs::path kfTrajectoryFile = fs::path(settings_->outDir()) / fs::path("m_" + std::to_string(i) + "_trajectory.txt");
+        ofstream fKFTrajectory;
+        fKFTrajectory.open(kfTrajectoryFile.string().c_str());
+        fKFTrajectory << fixed;
 
-        if (pKF->isBad())
-            continue;
+        cout << endl << "Saving KeyFrame trajectory to " << kfTrajectoryFile << " ..." << endl;
 
-        Sophus::SE3f Twc = pKF->GetPoseInverse();
-        Eigen::Quaternionf q = Twc.unit_quaternion();
-        Eigen::Vector3f t = Twc.translation();
-        fKFTrajectory << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t(0) << " " << t(1) << " "
-                      << t(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+        fs::path gpsFile = fs::path(settings_->outDir()) / fs::path("m_" + std::to_string(i) + "_trajectory_gt.txt");
+        ofstream fGPS;
+        fGPS.open(gpsFile.string().c_str());
+        fGPS << fixed;
 
-        fGPS << setprecision(6) << pKF->mTimeStamp << setprecision(14) << " " << pKF->mGPS.lat << " " << pKF->mGPS.lon
-             << " " << pKF->mGPS.alt << endl;
+        cout << endl << "Saving GPS data to " << gpsFile << " ..." << endl;
+
+        for (size_t i = 0; i < vpKFs.size(); i++)
+        {
+            KeyFrame *pKF = vpKFs[i];
+
+            // pKF->SetPose(pKF->GetPose()*Two);
+
+            if (pKF->isBad())
+                continue;
+
+            Sophus::SE3f Twc = pKF->GetPoseInverse();
+            Eigen::Quaternionf q = Twc.unit_quaternion();
+            Eigen::Vector3f t = Twc.translation();
+            fKFTrajectory << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t(0) << " " << t(1) << " "
+                        << t(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+
+            fGPS << setprecision(6) << pKF->mTimeStamp << setprecision(14) << " " << pKF->mGPS.lat << " " << pKF->mGPS.lon
+                << " " << pKF->mGPS.alt << endl;
+        }
+        fKFTrajectory.close();
+        fGPS.close();
     }
-    fKFTrajectory.close();
-    fGPS.close();
 }
 
 void System::SaveMapPoints()
 {
-    fs::path mapPointsFile = fs::path(settings_->outDir()) / fs::path("map_points.txt");
-    ofstream fMP;
-    fMP.open(mapPointsFile.string().c_str());
-    fMP << fixed;
-
-    cout << endl << "Saving MapPoints to " << mapPointsFile << " ..." << endl;
-    vector<MapPoint *> vpMPs = mpAtlas->GetAllMapPoints();
-    for (size_t i = 0; i < vpMPs.size(); i++)
+    vector<Map *> allMaps = mpAtlas->GetAllMaps();
+    for (int i = 0; i < mpAtlas->GetAllMaps().size(); i++)
     {
-        MapPoint *pMP = vpMPs[i];
+        Map *pMap = allMaps[i];
+        fs::path mapPointsFile = fs::path(settings_->outDir()) / fs::path("m_" + std::to_string(i) + "_map_points.txt");
+        ofstream fMP;
+        fMP.open(mapPointsFile.string().c_str());
+        fMP << fixed;
 
-        if (pMP->isBad())
-            continue;
+        cout << endl << "Saving MapPoints to " << mapPointsFile << " ..." << endl;
+        vector<MapPoint *> vpMPs = pMap->GetAllMapPoints();
+        for (size_t i = 0; i < vpMPs.size(); i++)
+        {
+            MapPoint *pMP = vpMPs[i];
 
-        Eigen::Vector3f pos = pMP->GetWorldPos();
-        fMP << setprecision(9) << pos(0) << " " << pos(1) << " " << pos(2) << endl;
+            if (pMP->isBad())
+                continue;
+
+            Eigen::Vector3f pos = pMP->GetWorldPos();
+            fMP << setprecision(9) << pos(0) << " " << pos(1) << " " << pos(2) << endl;
+        }
+        fMP.close();
     }
-    fMP.close();
 }
 
 void System::SaveSLAMEstimate()
 {
     string estimateFileBase = "_localized_trajectory";
     int index = 0;
-    fs::path estimateFile = fs::path(settings_->outDir()) / fs::path(std::to_string(index) + estimateFileBase + ".txt");
+    fs::path estimateFile = fs::path(settings_->outDir()) / fs::path("l_" + std::to_string(index) + "_trajectory.txt");
     while(fs::exists(estimateFile)) {
         ++index;
-        estimateFile = fs::path(settings_->outDir()) / fs::path(std::to_string(index) + estimateFileBase + ".txt");
+        estimateFile = fs::path(settings_->outDir()) / fs::path("l_" + std::to_string(index) + "_trajectory.txt");
     }
 
     fs::path groundTruthFile =
-        fs::path(settings_->outDir()) / fs::path(std::to_string(index) + "_localized_trajectory_gt.txt");
+        fs::path(settings_->outDir()) / fs::path("l_" + std::to_string(index) + "_trajectory_gt.txt");
 
     ofstream fSLAMe;
     fSLAMe.open(estimateFile.string().c_str());
