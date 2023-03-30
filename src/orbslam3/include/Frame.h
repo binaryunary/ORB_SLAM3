@@ -401,6 +401,8 @@ class Frame
     }
 
     Sophus::SE3<double> T_test;
+
+    bool mIsTrackingOk;
 };
 
 } // namespace ORB_SLAM3

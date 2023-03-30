@@ -20,6 +20,7 @@
 #include "System.h"
 #include "Converter.h"
 #include "GPSPos.h"
+#include "PosWithGT.h"
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -731,14 +732,14 @@ void System::SaveKeyFrameTrajectoryTUMGPS()
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
-    fs::path kfTrajectoryFile = fs::path(settings_->outDir()) / fs::path("KeyFrameTrajectory.txt");
+    fs::path kfTrajectoryFile = fs::path(settings_->outDir()) / fs::path("kf_trajectory.txt");
     ofstream fKFTrajectory;
     fKFTrajectory.open(kfTrajectoryFile.string().c_str());
     fKFTrajectory << fixed;
 
     cout << endl << "Saving KeyFrame trajectory to " << kfTrajectoryFile << " ..." << endl;
 
-    fs::path gpsFile = fs::path(settings_->outDir()) / fs::path("GPSTrajectory.txt");
+    fs::path gpsFile = fs::path(settings_->outDir()) / fs::path("kf_trajectory_gt.txt");
     ofstream fGPS;
     fGPS.open(gpsFile.string().c_str());
     fGPS << fixed;
@@ -769,7 +770,7 @@ void System::SaveKeyFrameTrajectoryTUMGPS()
 
 void System::SaveMapPoints()
 {
-    fs::path mapPointsFile = fs::path(settings_->outDir()) / fs::path("MapPoints.txt");
+    fs::path mapPointsFile = fs::path(settings_->outDir()) / fs::path("map_points.txt");
     ofstream fMP;
     fMP.open(mapPointsFile.string().c_str());
     fMP << fixed;
@@ -791,25 +792,41 @@ void System::SaveMapPoints()
 
 void System::SaveSLAMEstimate()
 {
-    string base = "SLAMEstimate_";
+    string estimateFileBase = "_localized_trajectory";
     int index = 0;
-    fs::path gpsEstimatesFile = fs::path(settings_->outDir()) / fs::path(base + std::to_string(index) + ".txt");
-    while(fs::exists(gpsEstimatesFile)) {
+    fs::path estimateFile = fs::path(settings_->outDir()) / fs::path(std::to_string(index) + estimateFileBase + ".txt");
+    while(fs::exists(estimateFile)) {
         ++index;
-        gpsEstimatesFile = fs::path(settings_->outDir()) / fs::path(base + std::to_string(index) + ".txt");
+        estimateFile = fs::path(settings_->outDir()) / fs::path(std::to_string(index) + estimateFileBase + ".txt");
     }
 
-    ofstream fGPSe;
-    fGPSe.open(gpsEstimatesFile.string().c_str());
-    fGPSe << fixed;
+    fs::path groundTruthFile =
+        fs::path(settings_->outDir()) / fs::path(std::to_string(index) + "_localized_trajectory_gt.txt");
 
-    cout << endl << "Saving SLAM estimate to " << gpsEstimatesFile << endl;
-    for (size_t i = 0; i < mpTracker->mGPSEstimate.size(); i++)
+    ofstream fSLAMe;
+    fSLAMe.open(estimateFile.string().c_str());
+    fSLAMe << fixed;
+
+    ofstream fGT;
+    fGT.open(groundTruthFile.string().c_str());
+    fGT << fixed;
+
+    cout << endl << "Saving estimated trajectory to " << estimateFile << endl;
+    cout << endl << "Saving ground truth to " << groundTruthFile << endl;
+    for (size_t i = 0; i < mpTracker->mSLAMEstimate.size(); i++)
     {
-        GPSPos pos = mpTracker->mSLAMEstimate[i];
-        fGPSe << setprecision(14) << pos.lat << " " << pos.lon << " " << pos.alt << endl;
+        PosWithGT pos = mpTracker->mSLAMEstimate[i];
+
+        // Only write those frames that have been tracked successfully
+        if (pos.isTrackingOK)
+        {
+            fSLAMe << setprecision(14) << pos.x << " " << pos.y << " " << pos.z << endl;
+        }
+
+        fGT << setprecision(14) << pos.gps.lat << " " << pos.gps.lon << " " << pos.gps.alt << endl;
     }
-    fGPSe.close();
+    fSLAMe.close();
+    fGT.close();
 }
 
 void System::SaveGPSEstimate()

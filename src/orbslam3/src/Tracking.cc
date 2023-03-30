@@ -1627,26 +1627,36 @@ Sophus::SE3f Tracking::GrabImageMonocularGPS(const cv::Mat &im, const double &ti
     if (mImGray.channels() == 3)
     {
         if (mbRGB)
+        {
             cvtColor(mImGray, mImGray, cv::COLOR_RGB2GRAY);
+        }
         else
+        {
             cvtColor(mImGray, mImGray, cv::COLOR_BGR2GRAY);
+        }
     }
     else if (mImGray.channels() == 4)
     {
         if (mbRGB)
+        {
             cvtColor(mImGray, mImGray, cv::COLOR_RGBA2GRAY);
+        }
         else
+        {
             cvtColor(mImGray, mImGray, cv::COLOR_BGRA2GRAY);
+        }
     }
 
     if (mSensor == System::MONOCULAR)
     {
         if (mState == NOT_INITIALIZED || mState == NO_IMAGES_YET || (lastID - initID) < mMaxFrames)
-            mCurrentFrame =
-                Frame(mImGray, timestamp, gps, mpIniORBextractor, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+        {
+            mCurrentFrame = Frame(mImGray, timestamp, gps, mpIniORBextractor, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+        }
         else
-            mCurrentFrame =
-                Frame(mImGray, timestamp, gps, mpORBextractorLeft, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+        {
+            mCurrentFrame = Frame(mImGray, timestamp, gps, mpORBextractorLeft, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+        }
     }
     else if (mSensor == System::IMU_MONOCULAR)
     {
@@ -2404,19 +2414,25 @@ void Tracking::Track()
     }
 #endif
 
+    bool isTrackingOK = mState == OK;
     Eigen::Vector3f cameraCenter(mCurrentFrame.GetCameraCenter());
-    std::stringstream ss;
+    PosWithGT pos = {isTrackingOK, cameraCenter.x(), cameraCenter.y(), cameraCenter.z(), mCurrentFrame.mGPS};
+    std::string prefix;
     if (!mbOnlyTracking)
     {
-        ss << "[M] Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
+        prefix = "[M]";
     }
     else
     {
-        cout << "[L] Current Frame: " << cameraCenter.x() << " " << cameraCenter.y() << " " << cameraCenter.z() << endl;
-        mSLAMEstimate.push_back({cameraCenter.x(), cameraCenter.y(), cameraCenter.z()});
-    }
+        prefix = "[L]";
+        // Only store frames that are localized
+        // mSLAMEstimate.push_back(Frame(mCurrentFrame));
+        // mSLAMEstimate.push_back(mCurrentFrame);
+        mSLAMEstimate.push_back(pos);
+}
 
-    cout << ss.str() << endl;
+    cout << prefix << "[" << mState << "]" << "Current Frame: " << pos.x << " " << pos.y << " " << pos.z << endl;
+
 }
 
 // void Tracking::StereoInitialization()

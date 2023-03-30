@@ -77,7 +77,8 @@ Frame::Frame(const Frame &frame)
       mpCamera2(frame.mpCamera2), Nleft(frame.Nleft), Nright(frame.Nright), monoLeft(frame.monoLeft),
       monoRight(frame.monoRight), mvLeftToRightMatch(frame.mvLeftToRightMatch),
       mvRightToLeftMatch(frame.mvRightToLeftMatch), mvStereo3Dpoints(frame.mvStereo3Dpoints), mTlr(frame.mTlr),
-      mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl), mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false)
+      mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl), mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false),
+      mIsTrackingOk(frame.mIsTrackingOk), mGPS(frame.mGPS)
 {
     for (int i = 0; i < FRAME_GRID_COLS; i++)
         for (int j = 0; j < FRAME_GRID_ROWS; j++)
@@ -113,7 +114,7 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
       mTimeStamp(timeStamp), mK(K.clone()), mK_(Converter::toMatrix3f(K)), mDistCoef(distCoef.clone()), mbf(bf),
       mThDepth(thDepth), mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame *>(NULL)), mbIsSet(false),
-      mbImuPreintegrated(false), mpCamera(pCamera), mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false)
+      mbImuPreintegrated(false), mpCamera(pCamera), mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false), mIsTrackingOk(false)
 {
     // Frame ID
     mnId = nNextId++;
@@ -219,7 +220,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
       mK_(Converter::toMatrix3f(K)), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth), mImuCalib(ImuCalib),
       mpImuPreintegrated(NULL), mpPrevFrame(pPrevF), mpImuPreintegratedFrame(NULL),
       mpReferenceKF(static_cast<KeyFrame *>(NULL)), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
-      mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false)
+      mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false), mIsTrackingOk(false)
 {
     // Frame ID
     mnId = nNextId++;
