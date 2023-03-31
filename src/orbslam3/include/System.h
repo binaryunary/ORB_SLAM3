@@ -216,6 +216,9 @@ class System
     void enableLocalizationMode();
     void disableLocalizationMode();
 
+    // Thread pool to store all threads we spawn
+    std::vector<std::thread> threadPool;
+
     // Input sensor
     eSensor mSensor;
 

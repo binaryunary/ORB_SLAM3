@@ -30,6 +30,7 @@
 #include <message_filters/time_synchronizer.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
+#include <sys/signal.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -53,12 +54,46 @@ class ImageGrabber
     ORB_SLAM3::System *mpSLAM;
 };
 
+class CustomSigIntHandler
+{
+public:
+    CustomSigIntHandler(ORB_SLAM3::System *pSLAM) : mpSLAM(pSLAM)
+    {
+        instance = this;
+    }
+
+    void sigIntHandler(int sig)
+    {
+        cout << "Custom SIGINT handler called" << endl;
+        mpSLAM->SaveData();
+        mpSLAM->Shutdown();
+        ros::shutdown();
+        cout << "Custom SIGINT handler finished" << endl;
+    }
+
+    static void staticSigIntHandler(int sig)
+    {
+        if (instance)
+        {
+            instance->sigIntHandler(sig);
+        }
+    }
+
+    ORB_SLAM3::System *mpSLAM;
+
+private:
+    static CustomSigIntHandler *instance;
+};
+
+// Initialize the static instance pointer to nullptr
+CustomSigIntHandler *CustomSigIntHandler::instance = nullptr;
+
+
 int main(int argc, char **argv)
 {
     cout << "+++ GPS +++" << endl;
 
-    ros::init(argc, argv, "Mono");
-    ros::start();
+    ros::init(argc, argv, "Mono", ros::init_options::NoSigintHandler);
 
     if (argc < 5)
     {
@@ -83,6 +118,11 @@ int main(int argc, char **argv)
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM3::System SLAM(vocPath, settingsPath, ORB_SLAM3::System::MONOCULAR, true, activateLocalizationMode, outDir, activeMap);
 
+    CustomSigIntHandler customSigIntHandler(&SLAM);
+    signal(SIGINT, CustomSigIntHandler::staticSigIntHandler);
+
+    ros::start();
+
     ImageGrabber igb(&SLAM);
 
     ros::NodeHandle nodeHandler;
@@ -97,14 +137,6 @@ int main(int argc, char **argv)
     sync.registerCallback(&ImageGrabber::GrabImage, &igb);
 
     ros::spin();
-
-    // Save camera trajectory
-    SLAM.SaveData();
-
-    // Stop all threads
-    SLAM.Shutdown();
-
-    ros::shutdown();
 
     return 0;
 }

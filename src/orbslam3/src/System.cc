@@ -168,7 +168,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLocalMapper =
         new LocalMapping(this, mpAtlas, mSensor == MONOCULAR || mSensor == IMU_MONOCULAR,
                          mSensor == IMU_MONOCULAR || mSensor == IMU_STEREO || mSensor == IMU_RGBD, strSequence);
-    mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run, mpLocalMapper);
+    // mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run, mpLocalMapper);
+    threadPool.emplace_back(&ORB_SLAM3::LocalMapping::Run, mpLocalMapper);
     mpLocalMapper->mInitFr = initFr;
     if (settings_)
         mpLocalMapper->mThFarPoints = settings_->thFarPoints();
@@ -186,8 +187,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //  mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
     mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != MONOCULAR,
                                    activeLC); // mSensor!=MONOCULAR);
-    mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
-
+    // mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
+    threadPool.emplace_back(&ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
     // Set pointers between threads
     mpTracker->SetLocalMapper(mpLocalMapper);
     mpTracker->SetLoopClosing(mpLoopCloser);
@@ -212,7 +213,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     // if(false) // TODO
     {
         mpViewer = new Viewer(this, mpFrameDrawer, mpMapDrawer, mpTracker, strSettingsFile, settings_);
-        mptViewer = new thread(&Viewer::Run, mpViewer);
+        // mptViewer = new thread(&Viewer::Run, mpViewer);
+        threadPool.emplace_back(&Viewer::Run, mpViewer);
         mpTracker->SetViewer(mpViewer);
         mpLoopCloser->mpViewer = mpViewer;
         mpViewer->both = mpFrameDrawer->both;
@@ -578,33 +580,45 @@ void System::Shutdown()
 
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
-    /*if(mpViewer)
+
+    if(mpViewer)
     {
         mpViewer->RequestFinish();
         while(!mpViewer->isFinished())
             usleep(5000);
-    }*/
+    }
 
     // Wait until all thread have effectively stopped
-    /*while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
+    while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
     {
         if(!mpLocalMapper->isFinished())
-            cout << "mpLocalMapper is not finished" << endl;*/
-    /*if(!mpLoopCloser->isFinished())
-        cout << "mpLoopCloser is not finished" << endl;
-    if(mpLoopCloser->isRunningGBA()){
-        cout << "mpLoopCloser is running GBA" << endl;
-        cout << "break anyway..." << endl;
-        break;
-    }*/
-    /*usleep(5000);
-}*/
+            cout << "mpLocalMapper is not finished" << endl;
+        if(!mpLoopCloser->isFinished())
+            cout << "mpLoopCloser is not finished" << endl;
+        if(mpLoopCloser->isRunningGBA()){
+            cout << "mpLoopCloser is running GBA" << endl;
+            cout << "break anyway..." << endl;
+            break;
+        }
+        usleep(5000);
+    }
 
     cout << "mbLocalizationModeEnabled: " << mbLocalizationModeEnabled << endl;
     if (!mbLocalizationModeEnabled)
     {
+        cout << "About to call SaveAtlas" << endl;
         SaveAtlas(FileType::BINARY_FILE);
     }
+
+    cout << "Joining threads" << endl;
+    for (auto &t : threadPool)
+    {
+        if (t.joinable())
+        {
+            t.join();
+        }
+    }
+    cout << "Threads joined" << endl;
 
     /*if(mpViewer)
         pangolin::BindToContext("ORB-SLAM2: Map Viewer");*/
