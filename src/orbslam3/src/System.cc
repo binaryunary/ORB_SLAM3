@@ -584,9 +584,9 @@ void System::Shutdown()
     if(mpViewer)
     {
         mpViewer->RequestFinish();
-        while(!mpViewer->isFinished())
-            usleep(5000);
     }
+
+    cout << "About to start waiting for running threads to finish" << endl;
 
     // Wait until all thread have effectively stopped
     while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
@@ -600,14 +600,10 @@ void System::Shutdown()
             cout << "break anyway..." << endl;
             break;
         }
+        if (mpViewer && !mpViewer->isFinished()){
+            cout << "mpViewer is not finished" << endl;
+        }
         usleep(5000);
-    }
-
-    cout << "mbLocalizationModeEnabled: " << mbLocalizationModeEnabled << endl;
-    if (!mbLocalizationModeEnabled)
-    {
-        cout << "About to call SaveAtlas" << endl;
-        SaveAtlas(FileType::BINARY_FILE);
     }
 
     cout << "Joining threads" << endl;
@@ -619,6 +615,13 @@ void System::Shutdown()
         }
     }
     cout << "Threads joined" << endl;
+
+    cout << "mbLocalizationModeEnabled: " << mbLocalizationModeEnabled << endl;
+    if (!mbLocalizationModeEnabled)
+    {
+        cout << "About to call SaveAtlas" << endl;
+        SaveAtlas(FileType::BINARY_FILE);
+    }
 
     /*if(mpViewer)
         pangolin::BindToContext("ORB-SLAM2: Map Viewer");*/
@@ -1637,21 +1640,23 @@ void System::SaveAtlas(int type)
         cout << "Remove status: " << removeStatus << endl;
         std::ofstream ofs(settings_->atlasFile(), std::ios::binary);
         boost::archive::text_oarchive oa(ofs);
-
         oa << strVocabularyName;
         oa << strVocabularyChecksum;
         oa << mpAtlas;
+        ofs.flush();
         cout << "End to write the save text file" << endl;
     }
     else if (type == BINARY_FILE) // File binary
     {
         cout << "Starting to write the save binary file" << endl;
-        std::remove(settings_->atlasFile().c_str());
+        int removeStatus = std::remove(settings_->atlasFile().c_str());
+        cout << "Remove status: " << removeStatus << endl;
         std::ofstream ofs(settings_->atlasFile(), std::ios::binary);
         boost::archive::binary_oarchive oa(ofs);
         oa << strVocabularyName;
         oa << strVocabularyChecksum;
         oa << mpAtlas;
+        ofs.flush();
         cout << "End to write save binary file" << endl;
     }
 }
