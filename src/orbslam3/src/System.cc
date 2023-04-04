@@ -20,7 +20,7 @@
 #include "System.h"
 #include "Converter.h"
 #include "GPSPos.h"
-#include "PosWithGT.h"
+#include "PoseWithGT.h"
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -578,32 +578,11 @@ void System::Shutdown()
 
     cout << "Shutdown" << endl;
 
-    mpLocalMapper->RequestFinish();
-    mpLoopCloser->RequestFinish();
-
-    if(mpViewer)
+    cout << "mbLocalizationModeEnabled: " << mbLocalizationModeEnabled << endl;
+    if (!mbLocalizationModeEnabled)
     {
-        mpViewer->RequestFinish();
-    }
-
-    cout << "About to start waiting for running threads to finish" << endl;
-
-    // Wait until all thread have effectively stopped
-    while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
-    {
-        if(!mpLocalMapper->isFinished())
-            cout << "mpLocalMapper is not finished" << endl;
-        if(!mpLoopCloser->isFinished())
-            cout << "mpLoopCloser is not finished" << endl;
-        if(mpLoopCloser->isRunningGBA()){
-            cout << "mpLoopCloser is running GBA" << endl;
-            cout << "break anyway..." << endl;
-            break;
-        }
-        if (mpViewer && !mpViewer->isFinished()){
-            cout << "mpViewer is not finished" << endl;
-        }
-        usleep(5000);
+        cout << "About to call SaveAtlas" << endl;
+        SaveAtlas(FileType::BINARY_FILE);
     }
 
     cout << "Joining threads" << endl;
@@ -615,13 +594,6 @@ void System::Shutdown()
         }
     }
     cout << "Threads joined" << endl;
-
-    cout << "mbLocalizationModeEnabled: " << mbLocalizationModeEnabled << endl;
-    if (!mbLocalizationModeEnabled)
-    {
-        cout << "About to call SaveAtlas" << endl;
-        SaveAtlas(FileType::BINARY_FILE);
-    }
 
     /*if(mpViewer)
         pangolin::BindToContext("ORB-SLAM2: Map Viewer");*/
@@ -760,10 +732,10 @@ void System::SaveKeyFrameTrajectoryTUMGPS()
 
         cout << endl << "Saving KeyFrame trajectory to " << kfTrajectoryFile << " ..." << endl;
 
-        fs::path gpsFile = fs::path(settings_->outDir()) / fs::path("m_" + std::to_string(i) + "_trajectory_gt.txt");
-        ofstream fGPS;
-        fGPS.open(gpsFile.string().c_str());
-        fGPS << fixed;
+        fs::path gpsFile = fs::path(settings_->outDir()) / fs::path("m_" + std::to_string(i) + "_trajectory_gt_wgs.txt");
+        ofstream fGT;
+        fGT.open(gpsFile.string().c_str());
+        fGT << fixed;
 
         cout << endl << "Saving GPS data to " << gpsFile << " ..." << endl;
 
@@ -782,11 +754,12 @@ void System::SaveKeyFrameTrajectoryTUMGPS()
             fKFTrajectory << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t(0) << " " << t(1) << " "
                         << t(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
 
-            fGPS << setprecision(6) << pKF->mTimeStamp << setprecision(14) << " " << pKF->mGPS.lat << " " << pKF->mGPS.lon
-                << " " << pKF->mGPS.alt << endl;
+            fGT << setprecision(6) << pKF->mTimeStamp << setprecision(14) << " " << pKF->mGPS.lat << " "
+                 << pKF->mGPS.lon << " " << pKF->mGPS.alt << " " << q.x() << " " << q.y() << " " << q.z() << " "
+                 << q.w() << endl;
         }
         fKFTrajectory.close();
-        fGPS.close();
+        fGT.close();
     }
 }
 
@@ -828,7 +801,7 @@ void System::SaveSLAMEstimate()
     }
 
     fs::path groundTruthFile =
-        fs::path(settings_->outDir()) / fs::path("l_" + std::to_string(index) + "_trajectory_gt.txt");
+        fs::path(settings_->outDir()) / fs::path("l_" + std::to_string(index) + "_trajectory_gt_wgs.txt");
 
     ofstream fSLAMe;
     fSLAMe.open(estimateFile.string().c_str());
@@ -842,15 +815,17 @@ void System::SaveSLAMEstimate()
     cout << endl << "Saving ground truth to " << groundTruthFile << endl;
     for (size_t i = 0; i < mpTracker->mSLAMEstimate.size(); i++)
     {
-        PosWithGT pos = mpTracker->mSLAMEstimate[i];
+        PoseWithGT pos = mpTracker->mSLAMEstimate[i];
 
         // Only write those frames that have been tracked successfully
         if (pos.isTrackingOK)
         {
-            fSLAMe << setprecision(14) << pos.x << " " << pos.y << " " << pos.z << endl;
+            fSLAMe << setprecision(6) << pos.timestamp << " " << setprecision(14) << pos.x << " " << pos.y << " "
+                   << pos.z << " " << pos.qx << " " << pos.qy << " " << pos.qz << " " << pos.qw << endl;
         }
 
-        fGT << setprecision(14) << pos.gps.lat << " " << pos.gps.lon << " " << pos.gps.alt << endl;
+        fGT << setprecision(6) << pos.timestamp << " " << setprecision(14) << pos.gps.lat << " " << pos.gps.lon << " "
+            << pos.gps.alt << " " << pos.qx << " " << pos.qy << " " << pos.qz << " " << pos.qw << endl;
     }
     fSLAMe.close();
     fGT.close();
@@ -1628,6 +1603,36 @@ void System::SaveAtlas(int type)
 
     // Save the current session
     mpAtlas->PreSave();
+
+    cout << "About to start waiting for running threads to finish" << endl;
+
+    mpLocalMapper->RequestFinish();
+    mpLoopCloser->RequestFinish();
+
+    if (mpViewer)
+    {
+        mpViewer->RequestFinish();
+    }
+
+    // Wait until all thread have effectively stopped
+    while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
+    {
+        if (!mpLocalMapper->isFinished())
+            cout << "mpLocalMapper is not finished" << endl;
+        if (!mpLoopCloser->isFinished())
+            cout << "mpLoopCloser is not finished" << endl;
+        if (mpLoopCloser->isRunningGBA())
+        {
+            cout << "mpLoopCloser is running GBA" << endl;
+            cout << "break anyway..." << endl;
+            break;
+        }
+        if (mpViewer && !mpViewer->isFinished())
+        {
+            cout << "mpViewer is not finished" << endl;
+        }
+        usleep(5000);
+    }
 
     string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
     std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");

@@ -27,7 +27,7 @@
 #include "Frame.h"
 #include "FrameDrawer.h"
 #include "GPSPos.h"
-#include "PosWithGT.h"
+#include "PoseWithGT.h"
 #include "ImuTypes.h"
 #include "KeyFrameDatabase.h"
 #include "LocalMapping.h"
@@ -181,7 +181,7 @@ class Tracking
     bool mbWriteStats;
 
     vector<GPSPos> mGPSEstimate;
-    vector<PosWithGT> mSLAMEstimate;
+    vector<PoseWithGT> mSLAMEstimate;
 
 #ifdef REGISTER_TIMES
     void LocalMapStats2File();

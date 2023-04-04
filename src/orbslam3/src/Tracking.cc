@@ -2415,8 +2415,19 @@ void Tracking::Track()
 #endif
 
     bool isTrackingOK = mState == OK;
-    Eigen::Vector3f cameraCenter(mCurrentFrame.GetCameraCenter());
-    PosWithGT pos = {isTrackingOK, cameraCenter.x(), cameraCenter.y(), cameraCenter.z(), mCurrentFrame.mGPS};
+    Sophus::SE3f Twc = mCurrentFrame.GetPose();
+    Eigen::Quaternionf q = Twc.unit_quaternion();
+    PoseWithGT pos = {
+        isTrackingOK,
+        mCurrentFrame.mTimeStamp,
+        mCurrentFrame.GetCameraCenter().x(),
+        mCurrentFrame.GetCameraCenter().y(),
+        mCurrentFrame.GetCameraCenter().z(),
+        q.x(),
+        q.y(),
+        q.z(),
+        q.w(),
+        mCurrentFrame.mGPS};
     std::string prefix;
     if (!mbOnlyTracking)
     {

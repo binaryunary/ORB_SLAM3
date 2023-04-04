@@ -136,7 +136,7 @@ add_library(${PROJECT_NAME} SHARED
    include/GPSPos.h
    include/Settings.h
    include/GPSTransformer.h
-   include/PosWithGT.h
+   include/PoseWithGT.h
 )
 
 # add_subdirectory(Thirdparty/g2o)
