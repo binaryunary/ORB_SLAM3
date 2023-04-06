@@ -307,6 +307,7 @@ bool Atlas::isImuInitialized()
 
 void Atlas::PreSave()
 {
+    cout << "Atlas::PreSave()" << endl;
     if (mpCurrentMap)
     {
         if (!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
@@ -338,6 +339,7 @@ void Atlas::PreSave()
         pMi->PreSave(spCams);
     }
     RemoveBadMaps();
+    cout << "Atlas::PreSave() finished" << endl;
 }
 
 void Atlas::PostLoad()

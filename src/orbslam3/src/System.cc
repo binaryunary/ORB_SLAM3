@@ -578,11 +578,41 @@ void System::Shutdown()
 
     cout << "Shutdown" << endl;
 
+    cout << "About to start waiting for running threads to finish" << endl;
+
+    mpLocalMapper->RequestFinish();
+    mpLoopCloser->RequestFinish();
+
+    if (mpViewer)
+    {
+        mpViewer->RequestFinish();
+    }
+
     cout << "mbLocalizationModeEnabled: " << mbLocalizationModeEnabled << endl;
     if (!mbLocalizationModeEnabled)
     {
         cout << "About to call SaveAtlas" << endl;
         SaveAtlas(FileType::BINARY_FILE);
+    }
+
+    // Wait until all thread have effectively stopped
+    while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
+    {
+        if (!mpLocalMapper->isFinished())
+            cout << "mpLocalMapper is not finished" << endl;
+        if (!mpLoopCloser->isFinished())
+            cout << "mpLoopCloser is not finished" << endl;
+        if (mpLoopCloser->isRunningGBA())
+        {
+            cout << "mpLoopCloser is running GBA" << endl;
+            cout << "break anyway..." << endl;
+            break;
+        }
+        if (mpViewer && !mpViewer->isFinished())
+        {
+            cout << "mpViewer is not finished" << endl;
+        }
+        usleep(5000);
     }
 
     cout << "Joining threads" << endl;
@@ -1604,37 +1634,9 @@ void System::SaveAtlas(int type)
     // Save the current session
     mpAtlas->PreSave();
 
-    cout << "About to start waiting for running threads to finish" << endl;
-
-    mpLocalMapper->RequestFinish();
-    mpLoopCloser->RequestFinish();
-
-    if (mpViewer)
-    {
-        mpViewer->RequestFinish();
-    }
-
-    // Wait until all thread have effectively stopped
-    while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
-    {
-        if (!mpLocalMapper->isFinished())
-            cout << "mpLocalMapper is not finished" << endl;
-        if (!mpLoopCloser->isFinished())
-            cout << "mpLoopCloser is not finished" << endl;
-        if (mpLoopCloser->isRunningGBA())
-        {
-            cout << "mpLoopCloser is running GBA" << endl;
-            cout << "break anyway..." << endl;
-            break;
-        }
-        if (mpViewer && !mpViewer->isFinished())
-        {
-            cout << "mpViewer is not finished" << endl;
-        }
-        usleep(5000);
-    }
-
+    cout << "Calculating vocabulary checksum...";
     string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+    cout << "Vocabulary calculation finished" << endl;
     std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
     string strVocabularyName = mStrVocabularyFilePath.substr(found + 1);
 
