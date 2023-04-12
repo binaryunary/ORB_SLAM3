@@ -121,12 +121,16 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     if (!bLocalizationOnly)
     {
         // Create the Atlas
+        cout << "********************************************************" << endl;
         cout << "MAPPING mode activated, initializing Atlas from scratch " << endl;
+        cout << "********************************************************" << endl;
         mpAtlas = new Atlas(0);
     }
     else
     {
+        cout << "***************************" << endl;
         cout << "LOCALIZATION mode activated" << endl;
+        cout << "***************************" << endl;
         // clock_t start = clock();
         bool isRead = LoadAtlas(FileType::BINARY_FILE);
 

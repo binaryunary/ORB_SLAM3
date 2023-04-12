@@ -33,6 +33,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sys/signal.h>
+#include <novatel_oem7_msgs/INSPVA.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -43,65 +44,18 @@ using namespace std;
 using namespace sensor_msgs;
 using namespace message_filters;
 using namespace gps_common;
-
-class MessageStreamMonitor
-{
-  public:
-    MessageStreamMonitor(ORB_SLAM3::System *slam) : active(false), slam(slam)
-    {
-    }
-
-    void messageReceived()
-    {
-        std::unique_lock<std::mutex> lock(last_message_received_mutex);
-        if (!active)
-        {
-            active = true;
-        }
-        last_message_received = ros::Time::now();
-        lock.unlock();
-    }
-
-    void checkIfStreamEnded()
-    {
-        ros::Duration no_new_message_duration(1); // 1.0 seconds
-
-        while (ros::ok())
-        {
-            std::unique_lock<std::mutex> lock(last_message_received_mutex);
-            ros::Time last_received_copy = last_message_received;
-            lock.unlock();
-
-            if ((ros::Time::now() - last_received_copy) > no_new_message_duration && active)
-            {
-                cout << "No new messages received for more than 1 second, assuming stream ended." << endl;
-                cout << "Shutting down" << endl;
-                slam->SaveData();
-                slam->Shutdown();
-            }
-
-            ros::Duration(1).sleep();
-        }
-    }
-
-  private:
-    bool active;
-    ORB_SLAM3::System *slam;
-    ros::Time last_message_received;
-    std::mutex last_message_received_mutex;
-};
+using namespace novatel_oem7_msgs;
 
 class ImageGrabber
 {
   public:
-    ImageGrabber(ORB_SLAM3::System *pSLAM, MessageStreamMonitor *pMonitor) : mpSLAM(pSLAM), mpMonitor(pMonitor)
+    ImageGrabber(ORB_SLAM3::System *pSLAM) : mpSLAM(pSLAM)
     {
     }
 
-    void GrabImage(const ImageConstPtr &msg, const GPSFixConstPtr &gps);
+    void GrabImage(const ImageConstPtr &msg, const INSPVAConstPtr &gps);
 
     ORB_SLAM3::System *mpSLAM;
-    MessageStreamMonitor *mpMonitor;
 };
 
 class CustomSigIntHandler
@@ -171,19 +125,18 @@ int main(int argc, char **argv)
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM3::System SLAM(vocPath, settingsPath, ORB_SLAM3::System::MONOCULAR, true, activateLocalizationMode, outDir,
                            activeMap);
-    MessageStreamMonitor messageStreamMonitor(&SLAM);
     CustomSigIntHandler customSigIntHandler(&SLAM);
     signal(SIGINT, CustomSigIntHandler::staticSigIntHandler);
 
     ros::start();
 
-    ImageGrabber igb(&SLAM, &messageStreamMonitor);
+    ImageGrabber igb(&SLAM);
 
     ros::NodeHandle nodeHandler;
     message_filters::Subscriber<Image> image_sub(nodeHandler, "/camera/image_raw", 1);
-    message_filters::Subscriber<GPSFix> gps_sub(nodeHandler, "/gps/gps", 1);
+    message_filters::Subscriber<INSPVA> gps_sub(nodeHandler, "/novatel/oem7/inspva", 1);
 
-    typedef sync_policies::ApproximateTime<Image, GPSFix> SyncPolicy;
+    typedef sync_policies::ApproximateTime<Image, INSPVA> SyncPolicy;
     Synchronizer<SyncPolicy> sync(SyncPolicy(30), image_sub, gps_sub);
 
     sync.registerCallback(&ImageGrabber::GrabImage, &igb);
@@ -202,10 +155,8 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void ImageGrabber::GrabImage(const ImageConstPtr &image, const GPSFixConstPtr &gps)
+void ImageGrabber::GrabImage(const ImageConstPtr &image, const INSPVAConstPtr &gps)
 {
-    // mpMonitor->messageReceived();
-
     // cout << "image: " << image->header.stamp << ", gps:" << gps->header.stamp << endl;
     // Copy the ros image message to cv::Mat.
     cv_bridge::CvImageConstPtr cv_ptr;
@@ -219,7 +170,7 @@ void ImageGrabber::GrabImage(const ImageConstPtr &image, const GPSFixConstPtr &g
         return;
     }
 
-    GPSPos gpsPos = {gps->latitude, gps->longitude, gps->altitude};
+    GPSPos gpsPos = {gps->latitude, gps->longitude, gps->height};
 
     mpSLAM->TrackMonocularGPS(cv_ptr->image, cv_ptr->header.stamp.toSec(), gpsPos);
 }
