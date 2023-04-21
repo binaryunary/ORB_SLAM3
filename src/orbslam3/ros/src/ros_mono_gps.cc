@@ -30,10 +30,11 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
+#include <novatel_oem7_msgs/INSPVA.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <sys/signal.h>
-#include <novatel_oem7_msgs/INSPVA.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -53,7 +54,7 @@ class ImageGrabber
     {
     }
 
-    void GrabImage(const ImageConstPtr &msg, const INSPVAConstPtr &gps);
+    void GrabImage(const ImageConstPtr &msg, const NavSatFixConstPtr &gps);
 
     ORB_SLAM3::System *mpSLAM;
 };
@@ -134,9 +135,9 @@ int main(int argc, char **argv)
 
     ros::NodeHandle nodeHandler;
     message_filters::Subscriber<Image> image_sub(nodeHandler, "/camera/image_raw", 1);
-    message_filters::Subscriber<INSPVA> gps_sub(nodeHandler, "/novatel/oem7/inspva", 1);
+    message_filters::Subscriber<NavSatFix> gps_sub(nodeHandler, "/kitti/oxts/gps/fix", 1);
 
-    typedef sync_policies::ApproximateTime<Image, INSPVA> SyncPolicy;
+    typedef sync_policies::ApproximateTime<Image, NavSatFix> SyncPolicy;
     Synchronizer<SyncPolicy> sync(SyncPolicy(30), image_sub, gps_sub);
 
     sync.registerCallback(&ImageGrabber::GrabImage, &igb);
@@ -155,7 +156,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void ImageGrabber::GrabImage(const ImageConstPtr &image, const INSPVAConstPtr &gps)
+void ImageGrabber::GrabImage(const ImageConstPtr &image, const NavSatFixConstPtr &gps)
 {
     // cout << "image: " << image->header.stamp << ", gps:" << gps->header.stamp << endl;
     // Copy the ros image message to cv::Mat.
@@ -170,7 +171,7 @@ void ImageGrabber::GrabImage(const ImageConstPtr &image, const INSPVAConstPtr &g
         return;
     }
 
-    GPSPos gpsPos = {gps->latitude, gps->longitude, gps->height};
+    GPSPos gpsPos = {gps->latitude, gps->longitude, gps->altitude};
 
     mpSLAM->TrackMonocularGPS(cv_ptr->image, cv_ptr->header.stamp.toSec(), gpsPos);
 }

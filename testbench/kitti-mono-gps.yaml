@@ -1,0 +1,108 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# System config
+#--------------------------------------------------------------------------------------------
+
+System.AtlasFile: "atlas.osa"
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+File.version: "1.0"
+
+Camera.type: "PinHole"
+
+# [
+#   959.791,0,696.0217,
+#   0,956.9251,224.1806,
+#   0,0,1
+# ]
+
+# Camera calibration and distortion parameters (OpenCV)
+Camera1.fx: 959.791
+Camera1.fy: 956.9251
+Camera1.cx: 696.0217
+Camera1.cy: 224.1806
+
+# [
+#   -0.3691481,
+#   0.1968681,
+#   0.001353473,
+#   0.0005677587,
+#   -0.06770705
+# ]
+
+Camera1.k1:  -0.3691481
+Camera1.k2: 0.1968681
+Camera1.p1: 0.001353473
+Camera1.p2: 0.0005677587
+
+# Camera frames per second
+Camera.fps: 10
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 1
+
+# Camera resolution
+Camera.width: 1242
+Camera.height: 375
+
+Camera.newWidth: 621
+Camera.newHeight: 188
+
+
+#--------------------------------------------------------------------------------------------
+# GPS transform parameters
+#---------------------------------------------------------------------------------------------
+
+GPS.TransformRotation: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: f
+   data: [-0.97959926, -0.0120391 , -0.20059998,
+          0.20014265,  0.03154159, -0.97925893,
+          0.01811664, -0.99942993, -0.02848858]
+
+GPS.TransformTranslation: !!opencv-matrix
+   rows: 1
+   cols: 3
+   dt: f
+   data: [483809.9121664679, 6471586.129991482, 37.1040743573]
+
+GPS.TransformScale: 79.7530056850853
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 2000
+
+# ORB Extractor: Scale factor between levels in the scale pyramid
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid
+ORBextractor.nLevels: 8
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.1
+Viewer.KeyFrameLineWidth: 1.0
+Viewer.GraphLineWidth: 1.0
+Viewer.PointSize: 2.0
+Viewer.CameraSize: 0.15
+Viewer.CameraLineWidth: 2.0
+Viewer.ViewpointX: 0.0
+Viewer.ViewpointY: -10.0
+Viewer.ViewpointZ: -0.1
+Viewer.ViewpointF: 2000.0
+
