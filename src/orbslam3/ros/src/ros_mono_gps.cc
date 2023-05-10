@@ -30,10 +30,10 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
+#include <novatel_oem7_msgs/INSPVA.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sys/signal.h>
-#include <novatel_oem7_msgs/INSPVA.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -141,13 +141,8 @@ int main(int argc, char **argv)
 
     sync.registerCallback(&ImageGrabber::GrabImage, &igb);
 
-    // std::thread monitor_thread(&MessageStreamMonitor::checkIfStreamEnded, &messageStreamMonitor);
-
     cout << "Calling ros::spin()...";
     ros::spin();
-
-    // cout << "ros::spin() finished, joining monitor thread..." << endl;
-    // monitor_thread.join();
 
     cout << "calling ros::shutdon()" << endl;
     ros::shutdown();
@@ -158,7 +153,6 @@ int main(int argc, char **argv)
 void ImageGrabber::GrabImage(const ImageConstPtr &image, const INSPVAConstPtr &gps)
 {
     // cout << "image: " << image->header.stamp << ", gps:" << gps->header.stamp << endl;
-    // Copy the ros image message to cv::Mat.
     cv_bridge::CvImageConstPtr cv_ptr;
     try
     {

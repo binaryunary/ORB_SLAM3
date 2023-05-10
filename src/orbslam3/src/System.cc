@@ -27,9 +27,9 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/string.hpp>
-#include <boost/filesystem.hpp>
 #include <iomanip>
 #include <openssl/md5.h>
 #include <pangolin/pangolin.h>
@@ -44,7 +44,8 @@ namespace ORB_SLAM3
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer,
-               const bool bLocalizationOnly, const string &outDir, const int activeMap, const int initFr, const string &strSequence)
+               const bool bLocalizationOnly, const string &outDir, const int activeMap, const int initFr,
+               const string &strSequence)
     : mSensor(sensor), mpViewer(static_cast<Viewer *>(NULL)), mbReset(false), mbResetActiveMap(false),
       mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
 {
@@ -203,10 +204,12 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
-    if (bLocalizationOnly){
+    if (bLocalizationOnly)
+    {
         enableLocalizationMode();
     }
-    else {
+    else
+    {
         disableLocalizationMode();
     }
 
@@ -740,9 +743,9 @@ void System::SaveData()
     if (mbLocalizationModeEnabled)
     {
         SaveSLAMEstimate();
-        // SaveGPSEstimate();
     }
-    else {
+    else
+    {
         SaveKeyFrameTrajectoryTUMGPS();
         SaveMapPoints();
     }
@@ -759,14 +762,16 @@ void System::SaveKeyFrameTrajectoryTUMGPS()
 
         // Transform all keyframes so that the first keyframe is at the origin.
         // After a loop closure the first keyframe might not be at the origin.
-        fs::path kfTrajectoryFile = fs::path(settings_->outDir()) / fs::path("m_" + std::to_string(i) + "_trajectory.txt");
+        fs::path kfTrajectoryFile =
+            fs::path(settings_->outDir()) / fs::path("m_" + std::to_string(i) + "_trajectory.txt");
         ofstream fKFTrajectory;
         fKFTrajectory.open(kfTrajectoryFile.string().c_str());
         fKFTrajectory << fixed;
 
         cout << endl << "Saving KeyFrame trajectory to " << kfTrajectoryFile << " ..." << endl;
 
-        fs::path gpsFile = fs::path(settings_->outDir()) / fs::path("m_" + std::to_string(i) + "_trajectory_gt_wgs.txt");
+        fs::path gpsFile =
+            fs::path(settings_->outDir()) / fs::path("m_" + std::to_string(i) + "_trajectory_gt_wgs.txt");
         ofstream fGT;
         fGT.open(gpsFile.string().c_str());
         fGT << fixed;
@@ -786,11 +791,13 @@ void System::SaveKeyFrameTrajectoryTUMGPS()
             Eigen::Quaternionf q = Twc.unit_quaternion();
             Eigen::Vector3f t = Twc.translation();
             fKFTrajectory << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t(0) << " " << t(1) << " "
-                        << t(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+                          << t(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
 
+            // We don't take into account rotation, so this can be whatever. In this case we're just using whatever was
+            // set on the KeyFrame.
             fGT << setprecision(6) << pKF->mTimeStamp << setprecision(14) << " " << pKF->mGPS.lat << " "
-                 << pKF->mGPS.lon << " " << pKF->mGPS.alt << " " << q.x() << " " << q.y() << " " << q.z() << " "
-                 << q.w() << endl;
+                << pKF->mGPS.lon << " " << pKF->mGPS.alt << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()
+                << endl;
         }
         fKFTrajectory.close();
         fGT.close();
@@ -829,7 +836,8 @@ void System::SaveSLAMEstimate()
     string estimateFileBase = "_localized_trajectory";
     int index = 0;
     fs::path estimateFile = fs::path(settings_->outDir()) / fs::path("l_" + std::to_string(index) + "_trajectory.txt");
-    while(fs::exists(estimateFile)) {
+    while (fs::exists(estimateFile))
+    {
         ++index;
         estimateFile = fs::path(settings_->outDir()) / fs::path("l_" + std::to_string(index) + "_trajectory.txt");
     }
@@ -863,22 +871,6 @@ void System::SaveSLAMEstimate()
     }
     fSLAMe.close();
     fGT.close();
-}
-
-void System::SaveGPSEstimate()
-{
-    fs::path gpsEstimatesFile = fs::path(settings_->outDir()) / fs::path("GPSEstimates.txt");
-    ofstream fGPSe;
-    fGPSe.open(gpsEstimatesFile.string().c_str());
-    fGPSe << fixed;
-
-    cout << endl << "Saving GPS estimates to " << gpsEstimatesFile << endl;
-    for (size_t i = 0; i < mpTracker->mGPSEstimate.size(); i++)
-    {
-        GPSPos pos = mpTracker->mGPSEstimate[i];
-        fGPSe << setprecision(14) << pos.lat << " " << pos.lon << " " << pos.alt << endl;
-    }
-    fGPSe.close();
 }
 
 void System::SaveTrajectoryEuRoC(const string &filename)
