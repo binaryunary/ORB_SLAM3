@@ -252,20 +252,6 @@ class Settings
         return sOutDir_;
     }
 
-    Eigen::Matrix3f gpsTransformRotation()
-    {
-        return gpsTransformRotation_;
-    }
-
-    Eigen::Vector3f gpsTransformTranslation()
-    {
-        return gpsTransformTranslation_;
-    }
-    double gpsTransformScale()
-    {
-        return gpsTransformScale_;
-    }
-
     float thFarPoints()
     {
         return thFarPoints_;

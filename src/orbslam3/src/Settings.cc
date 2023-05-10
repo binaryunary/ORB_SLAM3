@@ -27,9 +27,9 @@
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/core/persistence.hpp>
 
+#include <Eigen/Dense>
 #include <boost/filesystem.hpp>
 #include <iostream>
-#include <Eigen/Dense>
 
 using namespace std;
 namespace fs = boost::filesystem;
@@ -210,8 +210,6 @@ Settings::Settings(const std::string &configFile, const int &sensor, const std::
     readAtlasFile(fSettings);
     cout << "\t-Loaded Atlas settings" << endl;
     readOtherParameters(fSettings);
-    cout << "\t-Loaded GPS transformation parameters" << endl;
-    readGPSTransform(fSettings);
     cout << "\t-Loaded misc parameters" << endl;
 
     if (bNeedToRectify_)
@@ -543,7 +541,8 @@ void Settings::readLoadAndSave(cv::FileStorage &fSettings)
     bool found;
 
     std::string loadFile = readParameter<string>(fSettings, "System.LoadAtlasFromFile", found, false);
-    if (found){
+    if (found)
+    {
         sLoadFrom_ = (fs::path(sOutDir_) / fs::path(loadFile)).string();
     }
 
@@ -554,28 +553,15 @@ void Settings::readLoadAndSave(cv::FileStorage &fSettings)
     }
 }
 
-void Settings::readAtlasFile(cv::FileStorage &fSettings) {
-    bool found;
-
-    std::string atlasFile = readParameter<string>(fSettings, "System.AtlasFile", found, true);
-    if (found){
-        sAtlasFile_ = (fs::path(sOutDir_) / fs::path(atlasFile)).string();
-    }
-}
-
-void Settings::readGPSTransform(cv::FileStorage &fSettings)
+void Settings::readAtlasFile(cv::FileStorage &fSettings)
 {
     bool found;
 
-    cv::Mat matRot = readParameter<cv::Mat>(fSettings, "GPS.TransformRotation", found, false);
-    cv::cv2eigen(matRot, gpsTransformRotation_);
-
-    cv::Mat matTrans = readParameter<cv::Mat>(fSettings, "GPS.TransformTranslation", found, false);
-    Eigen::Matrix3f matTransEigen;
-    cv::cv2eigen(matTrans, matTransEigen);
-    gpsTransformTranslation_ = Eigen::Vector3f(matTransEigen(0, 0), matTransEigen(0, 1), matTransEigen(0, 2));
-
-    gpsTransformScale_ = readParameter<double>(fSettings, "GPS.TransformScale", found, false);
+    std::string atlasFile = readParameter<string>(fSettings, "System.AtlasFile", found, true);
+    if (found)
+    {
+        sAtlasFile_ = (fs::path(sOutDir_) / fs::path(atlasFile)).string();
+    }
 }
 
 void Settings::readOtherParameters(cv::FileStorage &fSettings)
@@ -634,11 +620,6 @@ ostream &operator<<(std::ostream &output, const Settings &settings)
     output << "System settings: " << endl;
     output << "\t-OutDir: " << settings.sOutDir_ << endl;
     output << "\t-AtlasFile: " << settings.sAtlasFile_ << endl;
-
-    output << "GPS transformation: " << endl;
-    output << "\t-Rotation: " << settings.gpsTransformRotation_ << endl;
-    output << "\t-Translation: " << settings.gpsTransformTranslation_ << endl;
-    output << "\t-Scale: " << settings.gpsTransformScale_ << endl;
 
     output << "SLAM settings: " << endl;
 

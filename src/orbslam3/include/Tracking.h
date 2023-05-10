@@ -27,7 +27,6 @@
 #include "Frame.h"
 #include "FrameDrawer.h"
 #include "GPSPos.h"
-#include "PoseWithGT.h"
 #include "ImuTypes.h"
 #include "KeyFrameDatabase.h"
 #include "LocalMapping.h"
@@ -35,12 +34,12 @@
 #include "MapDrawer.h"
 #include "ORBVocabulary.h"
 #include "ORBextractor.h"
+#include "PoseWithGT.h"
 #include "Settings.h"
 #include "System.h"
 #include "Viewer.h"
 
 #include "GeometricCamera.h"
-#include "GPSTransformer.h"
 
 #include <mutex>
 #include <unordered_set>
@@ -73,9 +72,9 @@ class Tracking
     bool ParseIMUParamFile(cv::FileStorage &fSettings);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
-    // Sophus::SE3f GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp, string filename);
-    // Sophus::SE3f GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const double &timestamp, string filename);
-    // Sophus::SE3f GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
+    // Sophus::SE3f GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp,
+    // string filename); Sophus::SE3f GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const double &timestamp,
+    // string filename); Sophus::SE3f GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
     Sophus::SE3f GrabImageMonocularGPS(const cv::Mat &im, const double &timestamp, const GPSPos &gps, string filename);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
@@ -360,8 +359,6 @@ class Tracking
     int initID, lastID;
 
     Sophus::SE3f mTlr;
-
-    GPSTransformer mGPSTransformer;
 
     void newParameterLoader(Settings *settings);
 

@@ -22,13 +22,13 @@
 #include "Converter.h"
 #include "FrameDrawer.h"
 #include "G2oTypes.h"
+#include "GPSTransformer.h"
 #include "GeometricTools.h"
 #include "KannalaBrandt8.h"
 #include "MLPnPsolver.h"
 #include "ORBmatcher.h"
 #include "Optimizer.h"
 #include "Pinhole.h"
-#include "GPSTransformer.h"
 
 #include <Eigen/Dense>
 
@@ -50,7 +50,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer,
       mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB), mbReadyToInitializate(false), mpSystem(pSys),
       mpViewer(NULL), bStepByStep(false), mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas),
       mnLastRelocFrameId(0), time_recently_lost(5.0), mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0),
-      mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame *>(NULL)), mGPSTransformer(GPSTransformer(settings))
+      mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame *>(NULL))
 {
     // Load camera parameters from settings file
     if (settings)
@@ -1453,7 +1453,8 @@ bool Tracking::GetStepByStep()
     return bStepByStep;
 }
 
-// Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp,
+// Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double
+// &timestamp,
 //                                        string filename)
 // {
 //     // cout << "GrabImageStereo" << endl;
@@ -1494,16 +1495,20 @@ bool Tracking::GetStepByStep()
 //     // cout << "Incoming frame creation" << endl;
 
 //     if (mSensor == System::STEREO && !mpCamera2)
-//         mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary,
+//         mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight,
+//         mpORBVocabulary,
 //                               mK, mDistCoef, mbf, mThDepth, mpCamera);
 //     else if (mSensor == System::STEREO && mpCamera2)
-//         mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary,
+//         mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight,
+//         mpORBVocabulary,
 //                               mK, mDistCoef, mbf, mThDepth, mpCamera, mpCamera2, mTlr);
 //     else if (mSensor == System::IMU_STEREO && !mpCamera2)
-//         mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary,
+//         mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight,
+//         mpORBVocabulary,
 //                               mK, mDistCoef, mbf, mThDepth, mpCamera, &mLastFrame, *mpImuCalib);
 //     else if (mSensor == System::IMU_STEREO && mpCamera2)
-//         mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary,
+//         mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight,
+//         mpORBVocabulary,
 //                               mK, mDistCoef, mbf, mThDepth, mpCamera, mpCamera2, mTlr, &mLastFrame, *mpImuCalib);
 
 //     // cout << "Incoming frame ended" << endl;
@@ -1523,7 +1528,8 @@ bool Tracking::GetStepByStep()
 //     return mCurrentFrame.GetPose();
 // }
 
-// Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const double &timestamp, string filename)
+// Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const double &timestamp, string
+// filename)
 // {
 //     mImGray = imRGB;
 //     cv::Mat imDepth = imD;
@@ -1651,11 +1657,13 @@ Sophus::SE3f Tracking::GrabImageMonocularGPS(const cv::Mat &im, const double &ti
     {
         if (mState == NOT_INITIALIZED || mState == NO_IMAGES_YET || (lastID - initID) < mMaxFrames)
         {
-            mCurrentFrame = Frame(mImGray, timestamp, gps, mpIniORBextractor, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+            mCurrentFrame =
+                Frame(mImGray, timestamp, gps, mpIniORBextractor, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
         }
         else
         {
-            mCurrentFrame = Frame(mImGray, timestamp, gps, mpORBextractorLeft, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+            mCurrentFrame =
+                Frame(mImGray, timestamp, gps, mpORBextractorLeft, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
         }
     }
     else if (mSensor == System::IMU_MONOCULAR)
@@ -2417,17 +2425,16 @@ void Tracking::Track()
     bool isTrackingOK = mState == OK;
     Sophus::SE3f Twc = mCurrentFrame.GetPose();
     Eigen::Quaternionf q = Twc.unit_quaternion();
-    PoseWithGT pos = {
-        isTrackingOK,
-        mCurrentFrame.mTimeStamp,
-        mCurrentFrame.GetCameraCenter().x(),
-        mCurrentFrame.GetCameraCenter().y(),
-        mCurrentFrame.GetCameraCenter().z(),
-        q.x(),
-        q.y(),
-        q.z(),
-        q.w(),
-        mCurrentFrame.mGPS};
+    PoseWithGT pos = {isTrackingOK,
+                      mCurrentFrame.mTimeStamp,
+                      mCurrentFrame.GetCameraCenter().x(),
+                      mCurrentFrame.GetCameraCenter().y(),
+                      mCurrentFrame.GetCameraCenter().z(),
+                      q.x(),
+                      q.y(),
+                      q.z(),
+                      q.w(),
+                      mCurrentFrame.mGPS};
     std::string prefix;
     if (!mbOnlyTracking)
     {
@@ -2440,10 +2447,10 @@ void Tracking::Track()
         // mSLAMEstimate.push_back(Frame(mCurrentFrame));
         // mSLAMEstimate.push_back(mCurrentFrame);
         mSLAMEstimate.push_back(pos);
-}
+    }
 
-    cout << prefix << "[" << mState << "]" << "Current Frame: " << pos.x << " " << pos.y << " " << pos.z << endl;
-
+    cout << prefix << "[" << mState << "]"
+         << "Current Frame: " << pos.x << " " << pos.y << " " << pos.z << endl;
 }
 
 // void Tracking::StereoInitialization()
@@ -2459,7 +2466,8 @@ void Tracking::Track()
 //             }
 
 //             if (!mFastInit &&
-//                 (mCurrentFrame.mpImuPreintegratedFrame->avgA - mLastFrame.mpImuPreintegratedFrame->avgA).norm() < 0.5)
+//                 (mCurrentFrame.mpImuPreintegratedFrame->avgA - mLastFrame.mpImuPreintegratedFrame->avgA).norm() <
+//                 0.5)
 //             {
 //                 cout << "not enough acceleration" << endl;
 //                 return;
