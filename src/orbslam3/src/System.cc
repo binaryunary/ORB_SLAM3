@@ -639,7 +639,6 @@ void System::Shutdown()
     mpTracker->PrintTimeStats();
 #endif
 }
-
 bool System::isShutDown()
 {
     unique_lock<mutex> lock(mMutexReset);
